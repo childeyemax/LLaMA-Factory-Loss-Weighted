@@ -300,47 +300,6 @@ if "columns" in dataset_info[name]:
 
 4. 这样 `data_attr.loss_weight = "loss_weight"`，于是 `example[data_attr.loss_weight] = 1`（默认值）
 
-#### sharegpt 格式与 dataset_info.json 中的数据集描述
-
-```json
-"数据集名称": {
-  "file_name": "data.json",
-  "formatting": "sharegpt",
-  "columns": {
-    "messages": "conversations",
-    "system": "system",
-    "tools": "tools"
-  }
-}
-```
-
-```json
-[
-  {
-    "conversations": [
-      {
-        "from": "human",
-        "value": "人类指令"
-      },
-      {
-        "from": "function_call",
-        "value": "工具参数"
-      },
-      {
-        "from": "observation",
-        "value": "工具结果"
-      },
-      {
-        "from": "gpt",
-        "value": "模型回答"
-      }
-    ],
-    "system": "系统提示词（选填）",
-    "tools": "工具描述（选填）"
-  }
-]
-```
-
 ---
 
 #### 1.1.2 利用 DatasetAttr 实例中的信息加载、对齐数据集
@@ -869,9 +828,19 @@ return inner_training_loop(
 )
 ```
 
-2. `inner_training_loop` 为 `self._inner_training_loop` 方法的偏函数：`inner_training_loop = find_executable_batch_size(self._inner_training_loop, self._train_batch_size, args.auto_find_batch_size)`，参考 find_executable_batch_size 函数：<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer_utils.py#L764>
+2. `inner_training_loop` 为 `self._inner_training_loop` 方法的偏函数
 
-3. `self._inner_training_loop` 方法调用 `self.training_step`：`tr_loss_step = self.training_step(model, inputs, num_items_in_batch)`
+```python
+inner_training_loop = find_executable_batch_size(self._inner_training_loop, self._train_batch_size, args.auto_find_batch_size)
+```
+
+`find_executable_batch_size` 函数参考 <https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer_utils.py#L764>
+
+3. `self._inner_training_loop` 方法调用 `self.training_step`
+
+```python
+tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+```
 
 4. `self.training_step` 调用 `self.compute_loss`
 
@@ -1264,6 +1233,82 @@ def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=N
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
 
     return (loss, outputs) if return_outputs else loss
+```
+
+---
+
+### 3.5 LabelSmoother 类
+
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer_pt_utils.py#L544>
+
+```python
+@dataclass
+class LabelSmoother:
+    """
+    Adds label-smoothing on a pre-computed output from a Transformers model.
+
+    Args:
+        epsilon (`float`, *optional*, defaults to 0.1):
+            The label smoothing factor.
+        ignore_index (`int`, *optional*, defaults to -100):
+            The index in the labels to ignore when computing the loss.
+    """
+
+    epsilon: float = 0.1
+    ignore_index: int = -100
+
+    def __call__(self, model_output, labels, shift_labels=False):
+        logits = model_output["logits"] if isinstance(model_output, dict) else model_output[0]
+        if shift_labels:
+            logits = logits[..., :-1, :].contiguous()
+            labels = labels[..., 1:].contiguous()
+
+        log_probs = -nn.functional.log_softmax(logits, dim=-1)
+        if labels.dim() == log_probs.dim() - 1:
+            labels = labels.unsqueeze(-1)
+
+        padding_mask = labels.eq(self.ignore_index)
+        # In case the ignore_index is -100, the gather will fail, so we replace labels by 0. The padding_mask
+        # will ignore them in any case.
+        labels = torch.clamp(labels, min=0)
+        nll_loss = log_probs.gather(dim=-1, index=labels)
+        # works for fp16 input tensor too, by internally upcasting it to fp32
+        smoothed_loss = log_probs.sum(dim=-1, keepdim=True, dtype=torch.float32)
+
+        nll_loss.masked_fill_(padding_mask, 0.0)
+        smoothed_loss.masked_fill_(padding_mask, 0.0)
+
+        # Take the mean over the label dimensions, then divide by the number of active elements (i.e. not-padded):
+        num_active_elements = padding_mask.numel() - padding_mask.long().sum()
+        nll_loss = nll_loss.sum() / num_active_elements
+        smoothed_loss = smoothed_loss.sum() / (num_active_elements * log_probs.shape[-1])
+        return (1 - self.epsilon) * nll_loss + self.epsilon * smoothed_loss
+```
+
+---
+
+### 3.6 CustomSeq2SeqTrainer.compute_loss 方法
+
+<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/train/sft/trainer.py#L82>
+
+> CustomSeq2SeqTrainer在Trainer的基础上改写了compute_loss方法
+
+```python
+@override
+def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+	r"""
+	Fixes the loss value for transformers 4.46.0.
+	https://github.com/huggingface/transformers/blob/v4.46.0/src/transformers/trainer.py#L3605
+	"""
+	loss = super().compute_loss(model, inputs, return_outputs, **kwargs)
+	if is_transformers_version_equal_to_4_46() and not getattr(self, "model_accepts_loss_kwargs", False):
+		# other model should not scale the loss
+		if return_outputs:
+			return (loss[0] / self.args.gradient_accumulation_steps, *loss[1:])
+		else:
+			return loss / self.args.gradient_accumulation_steps
+
+	return loss
 ```
 
 ---
