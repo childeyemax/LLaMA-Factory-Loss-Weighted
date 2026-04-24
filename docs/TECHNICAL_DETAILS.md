@@ -9,7 +9,6 @@
 - [1. 数据集加载与预处理](#1-数据集加载与预处理)
 - [2. 训练配置](#2-训练配置)
 - [3. 训练执行](#3-训练执行)
-- [代码修改汇总](#代码修改汇总)
 
 ---
 
@@ -278,7 +277,7 @@ class DatasetAttr:
 
 ---
 
-#### 代码修改 (Step 1)
+##### 代码修改 (Step 1)
 
 如果我们给每一个样本增加额外标签 `loss_weight`：
 
@@ -413,7 +412,7 @@ def convert_sharegpt(
 
 ---
 
-#### 代码修改 (Step 2)
+###### 代码修改 (Step 2)
 
 convert_sharegpt 函数的 output 字典中增加：
 
@@ -558,7 +557,7 @@ def preprocess_supervised_dataset(
 
 ---
 
-#### 代码修改 (Step 3)
+##### 代码修改 (Step 3)
 
 对 `preprocess_supervised_dataset` 函数增加语句：
 
@@ -659,7 +658,7 @@ def preprocess_packed_supervised_dataset(
 
 ---
 
-#### 代码修改 (Step 4)
+##### 代码修改 (Step 4)
 
 对 `preprocess_packed_supervised_dataset` 函数增加语句：
 
@@ -1045,7 +1044,7 @@ def _set_signature_columns_if_needed(self):
 
 ---
 
-#### 代码修改 (Step 5)
+##### 代码修改 (Step 5)
 
 在 `CustomSeq2SeqTrainer` 中重写 `_set_signature_columns_if_needed` 方法，保留 `"loss_weight"`：
 
