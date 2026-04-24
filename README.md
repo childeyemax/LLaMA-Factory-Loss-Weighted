@@ -41,8 +41,7 @@
 llamafactory-loss-weight/
 │
 ├── README.md                           # 本文件
-├── LICENSE                             
-├── .gitignore                          
+├── LICENSE                                                     
 │
 ├── docs/
 │   └── TECHNICAL_DETAILS.md            # 技术详解文档
