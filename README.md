@@ -11,10 +11,6 @@
 - [文件结构](#文件结构)
 - [环境要求](#环境要求)
 - [快速开始](#快速开始)
-- [使用方法](#使用方法)
-- [代码修改详情](#代码修改详情)
-- [技术原理](#技术原理)
-- [应用场景](#应用场景)
 - [致谢](#致谢)
 - [许可证](#许可证)
 
@@ -26,19 +22,13 @@
 
 在传统的模型微调过程中，所有训练样本对损失函数的贡献是均等的。然而，在实际应用场景中，不同样本往往具有不同的重要性，应当获得更高的训练权重。本扩展正是为解决这一需求而设计，通过在数据层面引入权重标识，并在训练链路中实现权重传递与损失加权计算，使模型能够更加精准地学习关键样本的特征。
 
-### 核心价值
-
-- **差异化训练**：通过权重配置实现样本级别的差异化训练
-- **质量导向**：提升高质量样本对模型训练的影响力
-- **领域适配**：针对特定领域任务强化关键知识的学习
-
 ---
 
 ## 功能特性
 
 | 特性 | 说明 |
 |------|------|
-| **样本级权重控制** | 为每个训练样本独立设置损失权重，支持任意正浮点数值 |
+| **样本级权重控制** | 为每个训练样本独立设置损失权重，支持任意数值 |
 | **无缝集成** | 基于 LLaMA-Factory v0.9.1 原生扩展，保持原有功能完整 |
 | **灵活配置** | 通过简单的 JSON 配置即可启用加权功能，无需修改训练脚本 |
 | **兼容性** | 支持 Label Smoothing，与原有训练参数完全兼容 |
@@ -62,6 +52,7 @@ llamafactory-loss-weight/
     └── train_data.json                 # 训练数据格式示例
 ```
 
+---
 
 ## 环境要求
 
@@ -82,75 +73,17 @@ transformers=4.46.1
 
 ### Step 2: 数据集配置
 
-在 `dataset_info.json` 的 `columns` 中增加 `loss_weight` 字段：
+数据集配置方式参考：[examples](./examples)
 
-```json
-"dataset_example": {
-    "file_name": "your_data.json",
-    "formatting": "sharegpt",
-    "columns": {
-        "messages": "messages",
-        "images": "images",
-        "loss_weight": "loss_weight"
-    }
-}
-```
-
-### Step 3: 数据格式
-
-为每个样本设置 `loss_weight` 取值。若不设置可能会报错，设置为 `1.0` 时与原版行为相同：
-
-```json
-{
-    "messages": [
-        {
-            "role": "user",
-            "content": "<image>你是一个道路安全检查AI……"
-        },
-        {
-            "role": "assistant",
-            "content": "否"
-        }
-    ],
-    "images": [
-        "path/to/image.jpg"
-    ],
-    "loss_weight": 1.0
-}
-```
-
----
-
-## 使用方法
-
-### 权重设置建议
-
-| 权重值 | 适用场景 |
-|--------|----------|
-| `0.5` | 低质量样本或辅助性数据 |
-| `1.0` | 普通样本（默认行为） |
-| `1.5` | 较高质量样本 |
-| `2.0` | 高质量核心样本 |
-| `3.0+` | 关键领域知识或特殊任务样本 |
-
-### 训练命令
-
-配置完成后，使用常规的 LLaMA-Factory 训练命令即可：
-
-```bash
-llamafactory-cli train \
-    --stage sft \
-    --model_name_or_path your_model_path \
-    --dataset dataset_example \
-    --output_dir output \
-    --finetuning_type lora
-```
+1. 需要在 `dataset_info.json` 的 `columns` 中增加 `loss_weight` 字段。
+2. 训练集json文件中为每个样本设置 `loss_weight` 取值；若不设置会报错，设置为 `1.0` 时与原版行为相同。
+3. 目前只支持sharegpt格式的训练集。
 
 ---
 
 ## 代码修改详情
 
-本章节详细说明需要修改的代码文件及其修改内容。
+本章节详细说明需要修改的代码文件及其修改内容，技术详解文档见 [TECHNICAL_DETAILS.md](./docs/TECHNICAL_DETAILS.md)。
 
 ### 1. `llamafactory/data/parser.py`
 
@@ -348,67 +281,11 @@ def _set_signature_columns_if_needed(self):
 
 ---
 
-## 技术原理
-
-### 数据流传递链路
-
-```
-数据集 JSON 文件
-       ↓
-DatasetAttr（parser.py）解析 loss_weight 字段
-       ↓
-convert_sharegpt（aligner.py）转换为 _loss_weight
-       ↓
-preprocess_supervised_dataset（supervised.py）传递至 model_inputs
-       ↓
-CustomSeq2SeqTrainer._set_signature_columns_if_needed 保留字段
-       ↓
-compute_loss 获取 loss_weight 并传递
-       ↓
-label_smoother_weighted 实现加权损失计算
-```
-
-### 损失加权公式
-
-加权损失计算的核心公式如下：
-
-$$L_{weighted} = w \cdot L_{nll}$$
-
-其中：
-- $w$ 为样本权重（loss_weight）
-- $L_{nll}$ 为原始负对数似然损失
-
-当启用 Label Smoothing 时：
-
-$$L_{final} = (1 - \epsilon) \cdot L_{weighted} + \epsilon \cdot L_{smoothed}$$
-
-其中 $\epsilon$ 为 label smoothing 因子。
-
----
-
-## 应用场景
-
-### 场景一：质量差异化训练
-
-在数据集质量参差不齐的情况下，为高质量标注样本设置更高的权重，使模型更加关注可靠数据。
-
-### 场景二：领域知识强化
-
-针对特定领域的核心知识样本设置较高权重，强化模型在该领域的表现能力。
-
-### 场景三：任务优先级控制
-
-在多任务学习场景中，通过权重配置控制不同任务样本的训练优先级。
-
-### 场景四：样本难度调节
-
-对于困难样本或边界案例，可通过提高权重来增加模型的学习强度。
-
----
-
 ## 致谢
 
 本项目基于 [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory) 开发，感谢原作者的优秀工作。
+
+---
 
 ## 许可证
 
