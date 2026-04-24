@@ -1,0 +1,11 @@
+{
+    "loss_weight_example": {
+        "file_name": "train_data.json",
+        "formatting": "sharegpt",
+        "columns": {
+            "messages": "messages",
+            "images": "images",
+            "loss_weight": "loss_weight"
+        }
+    }
+}
