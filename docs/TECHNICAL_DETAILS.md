@@ -277,7 +277,7 @@ class DatasetAttr:
 
 ---
 
-##### 代码修改 (Step 1)
+##### 代码修改1
 
 如果我们给每一个样本增加额外标签 `loss_weight`：
 
@@ -412,7 +412,7 @@ def convert_sharegpt(
 
 ---
 
-###### 代码修改 (Step 2)
+###### 代码修改2
 
 convert_sharegpt 函数的 output 字典中增加：
 
@@ -557,7 +557,7 @@ def preprocess_supervised_dataset(
 
 ---
 
-##### 代码修改 (Step 3)
+##### 代码修改3
 
 对 `preprocess_supervised_dataset` 函数增加语句：
 
@@ -658,7 +658,7 @@ def preprocess_packed_supervised_dataset(
 
 ---
 
-##### 代码修改 (Step 4)
+##### 代码修改4
 
 对 `preprocess_packed_supervised_dataset` 函数增加语句：
 
@@ -1044,7 +1044,7 @@ def _set_signature_columns_if_needed(self):
 
 ---
 
-##### 代码修改 (Step 5)
+##### 代码修改5
 
 在 `CustomSeq2SeqTrainer` 中重写 `_set_signature_columns_if_needed` 方法，保留 `"loss_weight"`：
 
@@ -1312,7 +1312,7 @@ def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
 
 ---
 
-### 代码修改 (step 6)
+### 代码修改6
 
 我们修改损失函数的代码，使得能够实现对于不同 `loss_weight` 的样本进行加权。
 
