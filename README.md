@@ -1,4 +1,4 @@
-# LLaMA-Factory Loss Weight Extension
+# LLaMA-Factory-Loss-Weighted
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![LLaMA-Factory](https://img.shields.io/badge/LLaMA--Factory-0.9.1-green.svg)](https://github.com/hiyouga/LLaMA-Factory)
