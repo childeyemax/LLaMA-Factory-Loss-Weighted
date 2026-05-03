@@ -372,51 +372,51 @@ def get_dataset_list(dataset_names: Optional[Sequence[str]], dataset_dir: str) -
     Gets the attributes of the datasets.
     """
 
-        #……L83
-        else:
-                #……L89
-                try:
-                        with open(config_path) as f:
-                dataset_info = json.load(f)
+    #……L83
+    else:
+        #……L89
+        try:
+                with open(config_path) as f:
+        dataset_info = json.load(f)
 
     #……L98
     dataset_list: List["DatasetAttr"] = []
-        for name in dataset_names:
-            #……L127
+    for name in dataset_names:
+        #……L127
+        else:
+            dataset_attr = DatasetAttr("file", dataset_name=dataset_info[name]["file_name"])
+    
+        dataset_attr.set_attr("formatting", dataset_info[name], default="alpaca")
+        dataset_attr.set_attr("ranking", dataset_info[name], default=False)
+        dataset_attr.set_attr("subset", dataset_info[name])
+        dataset_attr.set_attr("split", dataset_info[name], default="train")
+        dataset_attr.set_attr("folder", dataset_info[name])
+        dataset_attr.set_attr("num_samples", dataset_info[name])
+    
+        if "columns" in dataset_info[name]:
+            column_names = ["system", "tools", "images", "videos", "chosen", "rejected", "kto_tag"]
+            if dataset_attr.formatting == "alpaca":
+                column_names.extend(["prompt", "query", "response", "history"])
             else:
-                dataset_attr = DatasetAttr("file", dataset_name=dataset_info[name]["file_name"])
-        
-            dataset_attr.set_attr("formatting", dataset_info[name], default="alpaca")
-            dataset_attr.set_attr("ranking", dataset_info[name], default=False)
-            dataset_attr.set_attr("subset", dataset_info[name])
-            dataset_attr.set_attr("split", dataset_info[name], default="train")
-            dataset_attr.set_attr("folder", dataset_info[name])
-            dataset_attr.set_attr("num_samples", dataset_info[name])
-        
-            if "columns" in dataset_info[name]:
-                column_names = ["system", "tools", "images", "videos", "chosen", "rejected", "kto_tag"]
-                if dataset_attr.formatting == "alpaca":
-                    column_names.extend(["prompt", "query", "response", "history"])
-                else:
-                    column_names.extend(["messages"])
-        
-                for column_name in column_names:
-                    dataset_attr.set_attr(column_name, dataset_info[name]["columns"])
-        
-            if dataset_attr.formatting == "sharegpt" and "tags" in dataset_info[name]:
-                tag_names = (
-                    "role_tag",
-                    "content_tag",
-                    "user_tag",
-                    "assistant_tag",
-                    "observation_tag",
-                    "function_tag",
-                    "system_tag",
-                )
-                for tag in tag_names:
-                    dataset_attr.set_attr(tag, dataset_info[name]["tags"])
-        
-            dataset_list.append(dataset_attr)
+                column_names.extend(["messages"])
+    
+            for column_name in column_names:
+                dataset_attr.set_attr(column_name, dataset_info[name]["columns"])
+    
+        if dataset_attr.formatting == "sharegpt" and "tags" in dataset_info[name]:
+            tag_names = (
+                "role_tag",
+                "content_tag",
+                "user_tag",
+                "assistant_tag",
+                "observation_tag",
+                "function_tag",
+                "system_tag",
+            )
+            for tag in tag_names:
+                dataset_attr.set_attr(tag, dataset_info[name]["tags"])
+    
+        dataset_list.append(dataset_attr)
 
     return dataset_list
 ```
