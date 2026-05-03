@@ -266,7 +266,7 @@ if "columns" in dataset_info[name]:
         dataset_attr.set_attr(column_name, dataset_info[name]["columns"])
 ```
 
-修改后，`data_attr.loss_weight = "loss_weight"`，于是 `example[data_attr.loss_weight] = 1`（默认值）。
+修改后，`data_attr.loss_weight` 的取值为字符串 `"loss_weight"`。
 
 ---
 
