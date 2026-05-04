@@ -1629,7 +1629,7 @@ if self.args.n_gpu > 1:
 | 修改点 5 | `src/llamafactory/train/sft/trainer.py` | 重写 `_set_signature_columns_if_needed` 保留 `loss_weight` 列 |
 | 修改点 6 | `src/llamafactory/train/sft/trainer.py` | 重写 `compute_loss`，新增 `label_smoother_weighted` |
 
-4. **正常启动训练**：使用 LLaMA-Factory 的标准训练命令启动训练，`loss_weight` 字段会自动在数据流中传递并作用于损失计算。
+4. **正常启动训练**：使用 LLaMA-Factory 的标准训练命令启动训练，`loss_weight` 字段会自动在数据流中传递并作用于损失计算。若有训练样本未设置 `loss_weight` 字段，则会报错。 
 
 ---
 
