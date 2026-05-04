@@ -1119,7 +1119,7 @@ def _prepare_inputs(self, inputs: Dict[str, Union[torch.Tensor, Any]]) -> Dict[s
 3. `self._inner_training_loop` 方法调用 `self.training_step`
 4. `self.training_step` 调用 `self.compute_loss`
 5. `self.compute_loss` 默认通过 `LabelSmoother` 类的 `__call__` 方法计算损失函数
-6. `CustomSeq2SeqTrainer` 在 `Trainer` 的基础上改写了 `compute_loss` 方法
+6. `CustomSeq2SeqTrainer.compute_los` 重写了 `Trainer.compute_loss` 方法
 
 ### 6.2 Trainer.train 方法
 
