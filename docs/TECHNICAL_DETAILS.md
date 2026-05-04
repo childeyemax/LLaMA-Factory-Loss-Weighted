@@ -922,10 +922,11 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
 
 **注意事项**：
 
-1. `CustomSeq2SeqTrainer` 继承自 `Seq2SeqTrainer`，`Seq2SeqTrainer` 继承自 `Trainer`（后面两个来自 transformers 库）
-2. `train` 方法直接来自 `Trainer`
-3. 如果 `compute_loss_func=None`，那么 `compute_loss` 方法默认使用 `LabelSmoother` 的 `__call__` 方法计算损失函数
-4. `CustomSeq2SeqTrainer` 在 `Trainer` 的基础上改写了 `compute_loss` 方法
+1. llamafactory中 `run_sft` 函数通过建立 `CustomSeq2SeqTrainer` 的实例 `trainer` 进行训练
+2. 类继承关系： `Trainer` --> `Seq2SeqTrainer` --> `CustomSeq2SeqTrainer` ，前两个类来自 transformers 库
+3. `CustomSeq2SeqTrainer.train` 方法直接调用 `Trainer.train`
+5. `Trainer` 类中，如果 `compute_loss_func` 取值为 `None` ，那么 `Trainer.compute_loss` 方法默认使用 `LabelSmoother.__call__`  方法计算损失函数
+6. `CustomSeq2SeqTrainer.compute_loss` 在 `Trainer.compute_loss` 的基础上进行重写
 
 ### 5.2 get_train_dataloader 构建 DataLoader
 
