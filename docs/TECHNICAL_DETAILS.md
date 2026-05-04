@@ -827,7 +827,6 @@ model_inputs["loss_weight"].append(packed_loss_weight or None)
 
 ```python
 class Trainer:
-
     #……L389
     @deprecate_kwarg("tokenizer", new_name="processing_class", version="5.0.0", raise_if_both_names=True)
     def __init__(
@@ -847,7 +846,6 @@ class Trainer:
         optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = (None, None),
         preprocess_logits_for_metrics: Optional[Callable[[torch.Tensor, torch.Tensor], torch.Tensor]] = None,
     ):
-
         ……
         #L714
         if self.args.label_smoothing_factor != 0:
@@ -855,8 +853,8 @@ class Trainer:
         else:
             self.label_smoother = None
         ……
-
-
+```
+```python
 class Seq2SeqTrainer(Trainer):
     @deprecate_kwarg("tokenizer", new_name="processing_class", version="5.0.0", raise_if_both_names=True)
     def __init__(
@@ -889,8 +887,8 @@ class Seq2SeqTrainer(Trainer):
             preprocess_logits_for_metrics=preprocess_logits_for_metrics,
         )
         ……
-
-
+```
+```python
 class CustomSeq2SeqTrainer(Seq2SeqTrainer):
     r"""
     Inherits Seq2SeqTrainer to compute generative metrics such as BLEU and ROUGE.
@@ -901,7 +899,6 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
     ) -> None:
         super().__init__(**kwargs)
         ……
-
         #L82
         @override
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
@@ -916,7 +913,6 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
                 return (loss[0] / self.args.gradient_accumulation_steps, *loss[1:])
             else:
                 return loss / self.args.gradient_accumulation_steps
-
         return loss
 ```
 
@@ -979,7 +975,9 @@ def get_train_dataloader(self) -> DataLoader:
 
 `_remove_unused_columns` 方法会检查数据集中的每一列是否在模型的 `forward` 方法签名中声明。不在签名中的列会被移除。这一机制是为了避免将模型不需要的数据送入 GPU，节省显存。
 
-**Trainer._remove_unused_columns 方法**:<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L865>
+**Trainer._remove_unused_columns 方法**:
+
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L865>
 
 ```python
 def _remove_unused_columns(self, dataset: "datasets.Dataset", description: Optional[str] = None):
