@@ -979,7 +979,7 @@ def get_train_dataloader(self) -> DataLoader:
 
 `_remove_unused_columns` 方法会检查数据集中的每一列是否在模型的 `forward` 方法签名中声明。不在签名中的列会被移除。这一机制是为了避免将模型不需要的数据送入 GPU，节省显存。
 
-**Trainer._remove_unused_columns 方法**（<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L865>）的完整代码如下：
+**Trainer._remove_unused_columns 方法**:<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L865>
 
 ```python
 def _remove_unused_columns(self, dataset: "datasets.Dataset", description: Optional[str] = None):
