@@ -1019,7 +1019,9 @@ def _remove_unused_columns(self, dataset: "datasets.Dataset", description: Optio
 
 `_set_signature_columns_if_needed` 方法通过 Python 的 `inspect.signature` 反射获取模型 `forward` 方法的参数列表，再加上 `label`、`label_ids` 和 `self.label_names`，构成"签名列"（`_signature_columns`）。只有签名列中的字段才会被保留。
 
-**Trainer._set_signature_columns_if_needed 方法**（<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L850>）全部代码如下：
+**Trainer._set_signature_columns_if_needed 方法**：
+
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L850>
 
 ```python
 def _set_signature_columns_if_needed(self):
@@ -1057,7 +1059,8 @@ def _set_signature_columns_if_needed(self):
 
 **Trainer._prepare_inputs**：<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3508>
 
-**Trainer._prepare_input**：<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3490>
+**Trainer._prepare_input**:
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3490>
 
 `Trainer.training_step` 调用了 `inputs = self._prepare_inputs(inputs)`，`Trainer._prepare_inputs` 中调用了 `inputs = self._prepare_input(inputs)`。
 
