@@ -7,7 +7,7 @@
 **阅读建议：**
 
 - **快速上手**：如果你只想知道需要修改哪些代码，请直接跳转到[附录 A：关键代码修改清单](#附录-a关键代码修改清单)，其中包含全部 6 个修改点的索引与简要说明。
-- **理解原理**：建议按章节顺序阅读。每一章开头都有"阶段概要"，用 2-3 句话说明该阶段的输入、操作和输出，帮助你建立整体认知后再深入细节。
+- **理解原理**：建议根据 [数据流方向](./dataflow_flowchart.md) 查阅对应章节进行阅读。每一章开头都有"阶段概要"，用 2-3 句话说明该阶段的输入、操作和输出，帮助建立整体认知后再深入细节。
 - **查阅特定环节**：利用文末的[附录 B：修改点映射表](#附录-b修改点映射表)，可以快速定位某个修改点在新结构中的位置。
 
 ---
@@ -80,28 +80,6 @@ transformers=4.46.1
 实现思路是沿着 LLaMA-Factory 的完整数据处理流水线，在每一阶段确保 `loss_weight` 字段不被丢弃，并最终在损失计算阶段将其作用于损失值。
 具体而言，数据流经历以下阶段（从上至下）：
 
-```mermaid
-graph LR
-O[run_sft] --> X[get_dataset]
-O --> Y["trainer=CustomSeq2SeqTrainer(), trainer.train()"]
-
-X --> A[_get_merged_dataset]
-X --> B[_get_preprocess_dataset]
-X --> C[split_dataset]
-
-A --> D["get_dataset_list: List[Dataset]"]
-A --> E["load_single_dataset"]
-A --> F[merge_dataset]
-F --> G[convert_sharegpt]
-
-B --> H[preprocess_supervised_dataset / preprocess_packed_supervised_dataset]
-H --> I[_encode_supervised_example]
-
-Y --> J[_inner_training_loop]
-J --> K[get_train_dataloader]
-J --> L[training_step]
-L --> M[compute_loss]
-```
 
 ```
 原始 JSON 文件（含 loss_weight 字段）
