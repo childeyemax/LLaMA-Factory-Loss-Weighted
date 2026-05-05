@@ -77,7 +77,31 @@ transformers=4.46.1
 
 本功能的核心目标是：**为每个训练样本引入一个 `loss_weight` 字段，使损失函数能够按样本级别进行加权**。
 
-实现思路是沿着 LLaMA-Factory 的完整数据处理流水线，在每一阶段确保 `loss_weight` 字段不被丢弃，并最终在损失计算阶段将其作用于损失值。具体而言，数据流经历以下阶段（详细流程图见 [dataflow_flowchart.txt](./dataflow_flowchart.txt)）：
+实现思路是沿着 LLaMA-Factory 的完整数据处理流水线，在每一阶段确保 `loss_weight` 字段不被丢弃，并最终在损失计算阶段将其作用于损失值。
+具体而言，数据流经历以下阶段（从上至下）：
+
+```mermaid
+graph LR
+O[run_sft] --> X[get_dataset]
+O --> Y["trainer=CustomSeq2SeqTrainer(), trainer.train()"]
+
+X --> A[_get_merged_dataset]
+X --> B[_get_preprocess_dataset]
+X --> C[split_dataset]
+
+A --> D["get_dataset_list: List[Dataset]"]
+A --> E["load_single_dataset"]
+A --> F[merge_dataset]
+F --> G[convert_sharegpt]
+
+B --> H[preprocess_supervised_dataset / preprocess_packed_supervised_dataset]
+H --> I[_encode_supervised_example]
+
+Y --> J[_inner_training_loop]
+J --> K[get_train_dataloader]
+J --> L[training_step]
+L --> M[compute_loss]
+```
 
 ```
 原始 JSON 文件（含 loss_weight 字段）
