@@ -25,4 +25,11 @@ Y --> J[_inner_training_loop]
 J --> K[get_train_dataloader]
 J --> L[training_step]
 L --> M[compute_loss]
+
+K --> N[_remove_unused_columns]
+K --> P[DataLoader]
+
+N --> Q[_set_signature_columns_if_needed]
+N --> R[remove_columns]
+
 ```
