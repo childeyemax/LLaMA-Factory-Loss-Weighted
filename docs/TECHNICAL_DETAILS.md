@@ -10,6 +10,35 @@
 - **理解原理**：建议根据 [数据流方向](./dataflow_flowchart.md) 查阅对应章节进行阅读。每一章开头都有"阶段概要"，用 2-3 句话说明该阶段的输入、操作和输出，帮助建立整体认知后再深入细节。
 - **查阅特定环节**：利用文末的[附录 B：修改点映射表](#附录-b修改点映射表)，可以快速定位某个修改点在新结构中的位置。
 
+## `run_sft` 数据流函数层级图
+
+**数据流方向**：从上至下
+
+```
+run_sft
+├── get_dataset
+│   ├── _get_merged_dataset
+│   │   ├── get_dataset_list -> List[Dataset]
+│   │   ├── load_single_dataset
+│   │   └── merge_dataset
+│   │       └── convert_sharegpt
+│   ├── _get_preprocess_dataset
+│   │   └── preprocess_supervised_dataset / preprocess_packed_supervised_dataset
+│   │       └── _encode_supervised_example
+│   └── split_dataset
+├── trainer=CustomSeq2SeqTrainer()
+└── trainer.train()
+    └── _inner_training_loop
+        ├── get_train_dataloader
+        │   ├── _remove_unused_columns
+        │   │   ├── _set_signature_columns_if_needed
+        │   │   └── remove_columns
+        │   └── DataLoader
+        └── training_step
+            └── compute_loss
+```
+
+
 ---
 
 ## 目录
