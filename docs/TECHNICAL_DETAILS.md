@@ -251,7 +251,7 @@ class DatasetAttr:
 **具体步骤**：
 
 1. 在 `DatasetAttr` 初始化时增加属性：`loss_weight: Optional[float] = None`
-2. 在 `get_dataset_list` 函数中，将 `loss_weight` 加入 `column_names` 列表，使其能够被 `set_attr` 方法解析
+2. 在 [`get_dataset_list` 函数](./TECHNICAL_DETAILS.md#33-get_dataset_list-%E8%A7%A3%E6%9E%90-dataset_info) 中，将 `loss_weight` 加入 `column_names` 列表，使其能够被 `set_attr` 方法解析
 
 修改后的代码片段：
 
