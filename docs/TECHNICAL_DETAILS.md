@@ -93,7 +93,7 @@ transformers=4.46.1
 
 LLaMA-Factory 的 SFT 微调流程入口为 `run_sft` 函数，它串联了数据加载、模型初始化、Trainer 配置和训练执行三个核心步骤：
 
-1. **加载并预处理数据集**：`dataset_module = get_dataset(template, model_args, data_args, training_args, stage="sft", **tokenizer_module)`
+1. **加载并预处理数据集**：[`dataset_module = get_dataset(template, model_args, data_args, training_args, stage="sft", **tokenizer_module)`](#31-get_dataset-%E5%87%BD%E6%95%B0%E6%80%BB%E8%A7%88)
 
 2. **训练配置**：初始化 CustomSeq2SeqTrainer
 ```python
@@ -251,9 +251,7 @@ class DatasetAttr:
 **具体步骤**：
 
 1. 在 `DatasetAttr` 初始化时增加属性：`loss_weight: Optional[float] = None`
-2. 在 [`get_dataset_list`](#33-get_dataset_list-%E8%A7%A3%E6%9E%90-dataset_info) 函数中，将 `loss_weight` 加入 `column_names` 列表，使其能够被 `set_attr` 方法解析
-
-修改后的代码片段：
+2. 在 [`get_dataset_list`](#33-get_dataset_list-%E8%A7%A3%E6%9E%90-dataset_info) 函数中，将 `loss_weight` 加入 `column_names` 列表，使其能够被 `set_attr` 方法解析。`get_dataset_list` 中修改后的代码片段：
 
 ```python
 if "columns" in dataset_info[name]:
