@@ -46,34 +46,7 @@ LLaMA-Factory 的 SFT 微调流程从 `run_sft` 入口函数出发，沿数据�
 
 3. **训练执行**（`trainer.train()`）：通过训练循环迭代读取数据批次，执行前向传播与损失计算。`loss_weight` 在此阶段被注入损失函数，实现样本级加权。
 
-整体数据流架构如下：
-
-```
-run_sft
-├── get_dataset
-│   ├── _get_merged_dataset
-│   │   ├── get_dataset_list -> List[Dataset]
-│   │   ├── load_single_dataset
-│   │   └── merge_dataset
-│   │       └── convert_sharegpt
-│   ├── _get_preprocess_dataset
-│   │   └── preprocess_supervised_dataset / preprocess_packed_supervised_dataset
-│   │       └── _encode_supervised_example
-│   └── split_dataset
-├── trainer=CustomSeq2SeqTrainer()
-└── trainer.train()
-    └── _inner_training_loop
-        ├── get_train_dataloader
-        │   ├── _remove_unused_columns
-        │   │   ├── _set_signature_columns_if_needed
-        │   │   └── remove_columns
-        │   └── DataLoader
-        └── training_step
-            ├── _prepare_inputs
-            │    └── _prepare_input
-            └── compute_loss
-                └── LabelSmoother
-```
+整体数据流架构见 [整体数据流架构.txt](./整体数据流架构.txt)
 
 ---
 
@@ -155,6 +128,7 @@ def get_dataset(
     r"""
     Gets the train dataset and optionally gets the evaluation dataset.
     """                        
+
     # 1. 加载、对齐、融合数据集
     with training_args.main_process_first(desc="load dataset"):
         dataset = _get_merged_dataset(data_args.dataset, model_args, data_args, training_args, stage)
@@ -245,51 +219,51 @@ def get_dataset_list(dataset_names: Optional[Sequence[str]], dataset_dir: str) -
     Gets the attributes of the datasets.
     """
 
-        #……L83
-        else:
-                #……L89
-                try:
-                        with open(config_path) as f:
+	#……L83
+	else:
+		#……L89
+		try:
+			with open(config_path) as f:
                 dataset_info = json.load(f)
 
     #……L98
     dataset_list: List["DatasetAttr"] = []
-        for name in dataset_names:
-            #……L127
-            else:
-                dataset_attr = DatasetAttr("file", dataset_name=dataset_info[name]["file_name"])
-        
-            dataset_attr.set_attr("formatting", dataset_info[name], default="alpaca")
-            dataset_attr.set_attr("ranking", dataset_info[name], default=False)
-            dataset_attr.set_attr("subset", dataset_info[name])
-            dataset_attr.set_attr("split", dataset_info[name], default="train")
-            dataset_attr.set_attr("folder", dataset_info[name])
-            dataset_attr.set_attr("num_samples", dataset_info[name])
-        
-            if "columns" in dataset_info[name]:
-                column_names = ["system", "tools", "images", "videos", "chosen", "rejected", "kto_tag"]
-                if dataset_attr.formatting == "alpaca":
-                    column_names.extend(["prompt", "query", "response", "history"])
-                else:
-                    column_names.extend(["messages"])
-        
-                for column_name in column_names:
-                    dataset_attr.set_attr(column_name, dataset_info[name]["columns"])
-        
-            if dataset_attr.formatting == "sharegpt" and "tags" in dataset_info[name]:
-                tag_names = (
-                    "role_tag",
-                    "content_tag",
-                    "user_tag",
-                    "assistant_tag",
-                    "observation_tag",
-                    "function_tag",
-                    "system_tag",
-                )
-                for tag in tag_names:
-                    dataset_attr.set_attr(tag, dataset_info[name]["tags"])
-        
-            dataset_list.append(dataset_attr)
+	for name in dataset_names:
+	    #……L127
+	    else:
+	        dataset_attr = DatasetAttr("file", dataset_name=dataset_info[name]["file_name"])
+	
+	    dataset_attr.set_attr("formatting", dataset_info[name], default="alpaca")
+	    dataset_attr.set_attr("ranking", dataset_info[name], default=False)
+	    dataset_attr.set_attr("subset", dataset_info[name])
+	    dataset_attr.set_attr("split", dataset_info[name], default="train")
+	    dataset_attr.set_attr("folder", dataset_info[name])
+	    dataset_attr.set_attr("num_samples", dataset_info[name])
+	
+	    if "columns" in dataset_info[name]:
+	        column_names = ["system", "tools", "images", "videos", "chosen", "rejected", "kto_tag"]
+	        if dataset_attr.formatting == "alpaca":
+	            column_names.extend(["prompt", "query", "response", "history"])
+	        else:
+	            column_names.extend(["messages"])
+	
+	        for column_name in column_names:
+	            dataset_attr.set_attr(column_name, dataset_info[name]["columns"])
+	
+	    if dataset_attr.formatting == "sharegpt" and "tags" in dataset_info[name]:
+	        tag_names = (
+	            "role_tag",
+	            "content_tag",
+	            "user_tag",
+	            "assistant_tag",
+	            "observation_tag",
+	            "function_tag",
+	            "system_tag",
+	        )
+	        for tag in tag_names:
+	            dataset_attr.set_attr(tag, dataset_info[name]["tags"])
+	
+	    dataset_list.append(dataset_attr)
 
     return dataset_list
 ```
@@ -399,8 +373,6 @@ def _load_single_dataset(
 
 **align_dataset 函数**：<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/aligner.py#L230>
 
-**convert_sharegpt 函数**：<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/aligner.py#L137>
-
 ```python
 def align_dataset(
     dataset: Union["Dataset", "IterableDataset"],
@@ -437,8 +409,11 @@ def align_dataset(
         remove_columns=column_names,
         **kwargs,
     )
+```
 
+**convert_sharegpt 函数**：<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/aligner.py#L137>
 
+```python
 def convert_sharegpt(
     example: Dict[str, Any],
     dataset_attr: "DatasetAttr",
@@ -497,10 +472,6 @@ convert_sharegpt 函数的 output 字典中增加：
 
 <https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/loader.py#L176>
 
-#### get_preprocess_and_print_func 函数
-
-<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/preprocess.py#L36>
-
 ```python
 def _get_preprocessed_dataset(
     dataset: Optional[Union["Dataset", "IterableDataset"]],
@@ -533,8 +504,13 @@ def _get_preprocessed_dataset(
 
     #……L222
     return dataset
+```
 
+#### get_preprocess_and_print_func 函数
 
+<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/preprocess.py#L36>
+
+```python
 def get_preprocess_and_print_func(
     data_args: "DataArguments",
     stage: Literal["pt", "sft", "rm", "ppo", "kto"],
@@ -783,7 +759,6 @@ trainer = CustomSeq2SeqTrainer(
 
 ```python
 class Trainer:
-
     #……L389
     @deprecate_kwarg("tokenizer", new_name="processing_class", version="5.0.0", raise_if_both_names=True)
     def __init__(
@@ -803,7 +778,6 @@ class Trainer:
         optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = (None, None),
         preprocess_logits_for_metrics: Optional[Callable[[torch.Tensor, torch.Tensor], torch.Tensor]] = None,
     ):
-
         ……
         #L714
         if self.args.label_smoothing_factor != 0:
@@ -811,8 +785,9 @@ class Trainer:
         else:
             self.label_smoother = None
         ……
+```
 
-
+```python
 class Seq2SeqTrainer(Trainer):
     @deprecate_kwarg("tokenizer", new_name="processing_class", version="5.0.0", raise_if_both_names=True)
     def __init__(
@@ -845,19 +820,18 @@ class Seq2SeqTrainer(Trainer):
             preprocess_logits_for_metrics=preprocess_logits_for_metrics,
         )
         ……
+```
 
-
+```python
 class CustomSeq2SeqTrainer(Seq2SeqTrainer):
     r"""
     Inherits Seq2SeqTrainer to compute generative metrics such as BLEU and ROUGE.
     """
-
     def __init__(
         self, finetuning_args: "FinetuningArguments", processor: Optional["ProcessorMixin"], **kwargs
     ) -> None:
         super().__init__(**kwargs)
         ……
-
         #L82
         @override
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
@@ -872,16 +846,15 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
                 return (loss[0] / self.args.gradient_accumulation_steps, *loss[1:])
             else:
                 return loss / self.args.gradient_accumulation_steps
-
         return loss
 ```
 
 ### 3.2 注意事项
 
-1. `CustomSeq2SeqTrainer` 继承自 `Seq2SeqTrainer`，`Seq2SeqTrainer` 继承自 `Trainer`（后面两个来自 transformers 库）
-2. `train` 方法直接来自 `Trainer`
-3. 如果 `compute_loss_func=None`，那么 `compute_loss` 方法默认使用 `LabelSmoother` 的 `__call__` 方法计算损失函数
-4. `CustomSeq2SeqTrainer` 在 `Trainer` 的基础上改写了 `compute_loss` 方法
+1. 类继承关系：`Trainer` --> `Seq2SeqTrainer` --> `CustomSeq2SeqTrainer`（前两个类来自 transformers 库）
+2. `CustomSeq2SeqTrainer.train` 方法直接调用 `Trainer.train`，没有修改
+3. `Trainer` 类中，如果 `compute_loss_func` 取值为 `None`，那么 `compute_loss` 方法默认使用 `LabelSmoother。`__call__` 方法计算损失函数
+4. `CustomSeq2SeqTrainer.compute_loss` 在 `Trainer.compute_loss` 的基础上进行重写
 
 ---
 
@@ -978,7 +951,6 @@ tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
 def _inner_training_loop(
     self, batch_size=None, args=None, resume_from_checkpoint=None, trial=None, ignore_keys_for_eval=None
 ):
-
     #L2151
     train_dataloader = self.get_train_dataloader()
 
@@ -1000,7 +972,6 @@ def _inner_training_loop(
                 with self.accelerator.accumulate(model):
                     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
                 ……
-
     #L2638
     return TrainOutput(self.state.global_step, train_loss, metrics)
 ```
@@ -1219,17 +1190,15 @@ def training_step(
     return loss.detach() / self.args.gradient_accumulation_steps
 ```
 
-##### _prepare_inputs 与 _prepare_input
+##### `_prepare_inputs` 与 `_prepare_input`
 
 `Trainer.training_step` 调用了 `inputs = self._prepare_inputs(inputs)`，`Trainer._prepare_inputs` 中调用了 `inputs = self._prepare_input(inputs)`。
-
-**Trainer._prepare_inputs**：<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3508>
-
-**Trainer._prepare_input**：<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3490>
 
 可以看出：
 1. `Trainer._prepare_input` 方法首先将输入的 inputs 中的 torch.tensor 转移到 `self.args.device` 设备中，如果采用 deepspeed 还要把浮点数和复数的数格式转化为 `self.accelerator.state.deepspeed_plugin.hf_ds_config.dtype()`
 2. `Trainer._prepare_inputs` 方法给 inputs 增加新的键值对：`inputs["mems"] = self._past`
+
+**`_prepare_inputs`**：<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3508>
 
 ```python
 def _prepare_input(self, data: Union[torch.Tensor, Any]) -> Union[torch.Tensor, Any]:
@@ -1249,7 +1218,11 @@ def _prepare_input(self, data: Union[torch.Tensor, Any]) -> Union[torch.Tensor, 
             kwargs.update({"dtype": self.accelerator.state.deepspeed_plugin.hf_ds_config.dtype()})
         return data.to(**kwargs)
     return data
+```
 
+**_prepare_input`**：<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3490>
+
+```python
 def _prepare_inputs(self, inputs: Dict[str, Union[torch.Tensor, Any]]) -> Dict[str, Union[torch.Tensor, Any]]:
     """
     Prepare `inputs` before feeding them to the model, converting them to tensors if they are not already and
@@ -1387,19 +1360,19 @@ class LabelSmoother:
 ```python
 @override
 def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
-        r"""
-        Fixes the loss value for transformers 4.46.0.
-        https://github.com/huggingface/transformers/blob/v4.46.0/src/transformers/trainer.py#L3605
-        """
-        loss = super().compute_loss(model, inputs, return_outputs, **kwargs)
-        if is_transformers_version_equal_to_4_46() and not getattr(self, "model_accepts_loss_kwargs", False):
-                # other model should not scale the loss
-                if return_outputs:
-                        return (loss[0] / self.args.gradient_accumulation_steps, *loss[1:])
-                else:
-                        return loss / self.args.gradient_accumulation_steps
+	r"""
+	Fixes the loss value for transformers 4.46.0.
+	https://github.com/huggingface/transformers/blob/v4.46.0/src/transformers/trainer.py#L3605
+	"""
+	loss = super().compute_loss(model, inputs, return_outputs, **kwargs)
+	if is_transformers_version_equal_to_4_46() and not getattr(self, "model_accepts_loss_kwargs", False):
+		# other model should not scale the loss
+		if return_outputs:
+			return (loss[0] / self.args.gradient_accumulation_steps, *loss[1:])
+		else:
+			return loss / self.args.gradient_accumulation_steps
 
-        return loss
+	return loss
 ```
 
 ---
@@ -1430,66 +1403,67 @@ from torch import nn
 ```python
 @override
 def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
-        """
-        How the loss is computed by Trainer. By default, all models return the loss in the first element.
+	"""
+	How the loss is computed by Trainer. By default, all models return the loss in the first element.
 
-        Subclass and override for custom behavior.
-        """
+	Subclass and override for custom behavior.
+	"""
 
-        if (self.label_smoother_weighted is not None or self.compute_loss_func is not None) and "labels" in inputs:
-                # 将self.label_smoother改为self.label_smoother_weighted
-                labels = inputs.pop("labels")
-        else:
-                labels = None
+	if (self.label_smoother_weighted is not None or self.compute_loss_func is not None) and "labels" in inputs:
+		# 将self.label_smoother改为self.label_smoother_weighted
+		labels = inputs.pop("labels")
+	else:
+		labels = None
 
-        if "loss_weight" in inputs:
-                loss_weight = inputs.pop("loss_weight") # 按照预期，loss_weight是形状为(batchsize,)的torch.tensor
-        else:
-                loss_weight = None
+	if "loss_weight" in inputs:
+		loss_weight = inputs.pop("loss_weight") # 按照预期，loss_weight是形状为(batchsize,)的torch.tensor
+	else:
+		loss_weight = None
 
-        if self.model_accepts_loss_kwargs:
-                loss_kwargs = {}
-                if num_items_in_batch is not None:
-                        loss_kwargs["num_items_in_batch"] = num_items_in_batch
-                inputs = {**inputs, **loss_kwargs}
-        outputs = model(**inputs) # 或者为 outputs = model(**inputs, labels=labels)
-        # Save past state if it exists
-        # TODO: this needs to be fixed and made cleaner later.
-        if self.args.past_index >= 0:
-                self._past = outputs[self.args.past_index]
-        
-        if labels is not None:
-                unwrapped_model = self.accelerator.unwrap_model(model)
-                if _is_peft_model(unwrapped_model):
-                        model_name = unwrapped_model.base_model.model._get_name()
-                else:
-                        model_name = unwrapped_model._get_name()
-                # User-defined compute_loss function
-                if self.compute_loss_func is not None:
-                        loss = self.compute_loss_func(outputs, labels, num_items_in_batch=num_items_in_batch)
-                elif model_name in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES.values():
-                        loss = self.label_smoother_weighted(outputs, labels, loss_weight, shift_labels=True)
-                else:
-                        loss = self.label_smoother_weighted(outputs, labels, loss_weight)
-        else:
-                if isinstance(outputs, dict) and "loss" not in outputs:
-                        raise ValueError(
-                                "The model did not return a loss from the inputs, only the following keys: "
-                                f"{{','.join(outputs.keys())}}. For reference, the inputs it received are {','.join(inputs.keys())}."
-                        )
-                # We don't use .loss here since the model may return tuples instead of ModelOutput.
-                loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
-        
-        r"""
-        Fixes the loss value for transformers 4.46.0.
-        https://github.com/huggingface/transformers/blob/v4.46.0/src/transformers/trainer.py#L3605
-        """
+	if self.model_accepts_loss_kwargs:
+		loss_kwargs = {}
+		if num_items_in_batch is not None:
+			loss_kwargs["num_items_in_batch"] = num_items_in_batch
+		inputs = {**inputs, **loss_kwargs}
+	outputs = model(**inputs) # 或者为 outputs = model(**inputs, labels=labels)
+	# Save past state if it exists
+	# TODO: this needs to be fixed and made cleaner later.
+	if self.args.past_index >= 0:
+		self._past = outputs[self.args.past_index]
+	
+	if labels is not None:
+		unwrapped_model = self.accelerator.unwrap_model(model)
+		if _is_peft_model(unwrapped_model):
+			model_name = unwrapped_model.base_model.model._get_name()
+		else:
+			model_name = unwrapped_model._get_name()
+		# User-defined compute_loss function
+		if self.compute_loss_func is not None:
+			loss = self.compute_loss_func(outputs, labels, num_items_in_batch=num_items_in_batch)
+		elif model_name in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES.values():
+			loss = self.label_smoother_weighted(outputs, labels, loss_weight, shift_labels=True)
+		else:
+			loss = self.label_smoother_weighted(outputs, labels, loss_weight)
+	else:
+		if isinstance(outputs, dict) and "loss" not in outputs:
+			raise ValueError(
+				"The model did not return a loss from the inputs, only the following keys: "
+				f"{','.join(outputs.keys())}. For reference, the inputs it received are {','.join(inputs.keys())}."
+			)
+		# We don't use .loss here since the model may return tuples instead of ModelOutput.
+		loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
+	
+	r"""
+	Fixes the loss value for transformers 4.46.0.
+	https://github.com/huggingface/transformers/blob/v4.46.0/src/transformers/trainer.py#L3605
+	"""
 
-        if is_transformers_version_equal_to_4_46() and not getattr(self, "model_accepts_loss_kwargs", False):
-                loss = loss / self.args.gradient_accumulation_steps
-                
-        return (loss, outputs) if return_outputs else loss
+	if is_transformers_version_equal_to_4_46() and not getattr(self, "model_accepts_loss_kwargs", False):
+		loss = loss / self.args.gradient_accumulation_steps
+		
+	return (loss, outputs) if return_outputs else loss
 ```
+
 
 ###### 增加label_smoother_weighted方法
 
@@ -1498,57 +1472,43 @@ def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=N
 ```python
 def label_smoother_weighted(self, model_output, labels, loss_weight, shift_labels=False):
 
-        # self.label_smoother在初始化时使用ignore_index默认值-100
-        ignore_index = -100
-        epsilon=self.args.label_smoothing_factor
-        
-        logits = model_output["logits"] if isinstance(model_output, dict) else model_output[0]
-        if shift_labels:
-                logits = logits[..., :-1, :].contiguous()
-                labels = labels[..., 1:].contiguous()
+	# self.label_smoother在初始化时使用ignore_index默认值-100
+	ignore_index = -100
+	epsilon=self.args.label_smoothing_factor
+	
+	logits = model_output["logits"] if isinstance(model_output, dict) else model_output[0]
+	if shift_labels:
+		logits = logits[..., :-1, :].contiguous()
+		labels = labels[..., 1:].contiguous()
 
-        log_probs = -nn.functional.log_softmax(logits, dim=-1)
-        if labels.dim() == log_probs.dim() - 1:
-                labels = labels.unsqueeze(-1)
+	log_probs = -nn.functional.log_softmax(logits, dim=-1)
+	if labels.dim() == log_probs.dim() - 1:
+		labels = labels.unsqueeze(-1)
 
-        padding_mask = labels.eq(ignore_index)
-        # In case the ignore_index is -100, the gather will fail, so we replace labels by 0. The padding_mask
-        # will ignore them in any case.
-        labels = torch.clamp(labels, min=0)
-                                                                                                                
-        nll_loss = log_probs.gather(dim=-1, index=labels)
-        
-        # works for fp16 input tensor too, by internally upcasting it to fp32
-        smoothed_loss = log_probs.sum(dim=-1, keepdim=True, dtype=torch.float32)
+	padding_mask = labels.eq(ignore_index)
+	# In case the ignore_index is -100, the gather will fail, so we replace labels by 0. The padding_mask
+	# will ignore them in any case.
+	labels = torch.clamp(labels, min=0)
+														
+	nll_loss = log_probs.gather(dim=-1, index=labels)
+	
+	# works for fp16 input tensor too, by internally upcasting it to fp32
+	smoothed_loss = log_probs.sum(dim=-1, keepdim=True, dtype=torch.float32)
 
-        if loss_weight is not None:
-                weights = loss_weight.unsqueeze(-1).unsqueeze(-1) # 将weights的形状变为(batchsize,1,1)
-                nll_loss = nll_loss * weights # 损失函数乘权重
-                smoothed_loss = smoothed_loss * weights
+	if loss_weight is not None:
+		weights = loss_weight.unsqueeze(-1).unsqueeze(-1) # 将weights的形状变为(batchsize,1,1)
+		nll_loss = nll_loss * weights # 损失函数乘权重
+		smoothed_loss = smoothed_loss * weights
 
-        else:
-                raise ValueError("错误：loss_weight is None!")
+	else:
+		raise ValueError("错误：loss_weight is None!")
 
-        nll_loss.masked_fill_(padding_mask, 0.0)
-        smoothed_loss.masked_fill_(padding_mask, 0.0)
+	nll_loss.masked_fill_(padding_mask, 0.0)
+	smoothed_loss.masked_fill_(padding_mask, 0.0)
 
-        # Take the mean over the label dimensions, then divide by the number of active elements (i.e. not-padded):
-        num_active_elements = padding_mask.numel() - padding_mask.long().sum()
-        nll_loss = nll_loss.sum() / num_active_elements
-        smoothed_loss = smoothed_loss.sum() / (num_active_elements * log_probs.shape[-1])
-        return (1 - epsilon) * nll_loss + epsilon * smoothed_loss
+	# Take the mean over the label dimensions, then divide by the number of active elements (i.e. not-padded):
+	num_active_elements = padding_mask.numel() - padding_mask.long().sum()
+	nll_loss = nll_loss.sum() / num_active_elements
+	smoothed_loss = smoothed_loss.sum() / (num_active_elements * log_probs.shape[-1])
+	return (1 - epsilon) * nll_loss + epsilon * smoothed_loss
 ```
-
----
-
-## 附录
-
-### loss_weight 完整传递链路总结
-
-`loss_weight` 从数据配置到最终损失计算的完整传递路径如下：
-
-1. **数据集配置**：用户在 `dataset_info.json` 的 `columns` 中声明 `"loss_weight": "loss_weight"`，在训练数据中为每个样本设置 `loss_weight` 值（代码修改1）
-2. **数据对齐**：`convert_sharegpt` 将原始 `loss_weight` 映射为标准字段 `_loss_weight`（代码修改2）
-3. **数据预处理**：`preprocess_supervised_dataset` 或 `preprocess_packed_supervised_dataset` 将 `_loss_weight` 传递为 `loss_weight` 字段（代码修改3、代码修改4）
-4. **列保留**：`_set_signature_columns_if_needed` 重写确保 `loss_weight` 不被 `_remove_unused_columns` 过滤（代码修改5）
-5. **损失计算**：重写的 `compute_loss` 从 inputs 中取出 `loss_weight`，通过 `label_smoother_weighted` 实现样本级加权（代码修改6）
