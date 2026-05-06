@@ -40,7 +40,7 @@ run_sft
             ├── _prepare_inputs
             │    └── _prepare_input
             └── compute_loss
-                └── LabelSmoother
+                └── LabelSmoother 
 ```
 
 **数据流总览**：整个训练流程从 `run_sft` 入口函数开始，分为三大阶段：
