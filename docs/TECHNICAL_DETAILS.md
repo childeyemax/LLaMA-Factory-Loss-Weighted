@@ -25,7 +25,6 @@
   - [4.2 _inner_training_loop](#42-_inner_training_loop)
     - [4.2.1 get_train_dataloader —— 构建训练数据加载器](#421-get_train_dataloader--构建训练数据加载器)
     - [4.2.2 training_step —— 执行单步训练](#422-training_step--执行单步训练)
-- [附录](#附录)
 
 ---
 
