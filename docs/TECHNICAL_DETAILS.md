@@ -300,10 +300,10 @@ class DatasetAttr:
 
 ##### 代码修改1
 
-如果我们给每一个样本增加额外标签 `loss_weight`：
+给每个样本增加额外字段 `loss_weight`：
 
 1. 在 dataset_info 的 `"columns"` 中增加 `"loss_weight": "loss_weight"`（与 `"messages"` 平级）
-2. 数据集中增加 `"loss_weight": 1`（默认值），注意与 `"messages"` 平级
+2. 训练集中增加 `"loss_weight": 1`（默认值），注意与 `"messages"` 平级
 3. DatasetAttr：初始化时增加语句：`loss_weight: Optional[float] = None`，并在 get_dataset_list 函数中将对应代码替换为：
 
 ```python
@@ -852,7 +852,7 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
 
 1. 类继承关系：`Trainer` --> `Seq2SeqTrainer` --> `CustomSeq2SeqTrainer`（前两个类来自 transformers 库）
 2. `CustomSeq2SeqTrainer.train` 方法直接调用 `Trainer.train`，没有修改
-3. `Trainer` 类中，如果 `compute_loss_func` 取值为 `None`，那么 `compute_loss` 方法默认使用 `LabelSmoother。`__call__` 方法计算损失函数
+3. `Trainer` 类中，如果 `compute_loss_func` 取值为 `None`，那么 `compute_loss` 方法默认使用 `LabelSmoother.__call__` 方法计算损失函数
 4. `CustomSeq2SeqTrainer.compute_loss` 在 `Trainer.compute_loss` 的基础上进行重写
 
 ---
