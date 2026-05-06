@@ -2,9 +2,11 @@ run_sft
 ├── get_dataset
 │   ├── _get_merged_dataset
 │   │   ├── get_dataset_list -> List[Dataset]
-│   │   ├── load_single_dataset
+│   │   ├── _load_single_dataset
+│   │   │   ├── load_dataset
+│   │   │   └── align_dataset
+│   │   │       └── convert_sharegpt
 │   │   └── merge_dataset
-│   │       └── convert_sharegpt
 │   ├── _get_preprocess_dataset
 │   │   └── preprocess_supervised_dataset / preprocess_packed_supervised_dataset
 │   │       └── _encode_supervised_example
@@ -21,4 +23,4 @@ run_sft
             ├── _prepare_inputs
             │    └── _prepare_input
             └── compute_loss
-                └── LabelSmoother 
+                └── LabelSmoother
