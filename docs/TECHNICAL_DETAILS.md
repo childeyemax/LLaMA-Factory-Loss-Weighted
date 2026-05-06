@@ -43,11 +43,11 @@ run_sft
                 └── LabelSmoother 
 ```
 
-**数据流总览**：整个训练流程从 `run_sft` 入口函数开始，分为三大阶段：
+**数据流总览**：LLaMA-Factory 的 SF T流程从 `run_sft` 入口函数开始，分为三大阶段：
 
 1. **数据准备阶段**（`get_dataset`）：从磁盘加载原始 JSON 数据集，经过格式对齐（`convert_sharegpt`）将用户定义的 `loss_weight` 字段提取为内部字段 `_loss_weight`，再通过预处理函数（`preprocess_supervised_dataset` / `preprocess_packed_supervised_dataset`）完成 Tokenization 并将 `_loss_weight` 转化为模型输入中的 `loss_weight` 列。
 2. **训练器初始化阶段**（`trainer = CustomSeq2SeqTrainer()`）：创建训练器实例，通过重写 `_set_signature_columns_if_needed` 方法确保 `loss_weight` 列不会被 DataLoader 的列过滤机制移除。
-3. **训练执行阶段**（`trainer.train()`）：在 `_inner_training_loop` 中，DataLoader 构建时执行列过滤（`_remove_unused_columns`），随后每个训练步骤（`training_step`）将数据转移到设备上（`_prepare_inputs`），最终在 `compute_loss` 中通过 `label_smoother_weighted` 方法实现样本级损失加权计算。
+3. **训练执行阶段**（`trainer.train()`）：在 `_inner_training_loop` 中，DataLoader 构建时执行列过滤（`_remove_unused_columns`），随后每个训练步骤（`training_step`）将数据转移到设备上（`_prepare_inputs`），最终在 `compute_loss` 中通过 `LabelSmoother.__call__` 方法实现样本级损失加权计算。
 
 ---
 
