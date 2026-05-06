@@ -1,0 +1,24 @@
+run_sft
+├── get_dataset
+│   ├── _get_merged_dataset
+│   │   ├── get_dataset_list -> List[Dataset]
+│   │   ├── load_single_dataset
+│   │   └── merge_dataset
+│   │       └── convert_sharegpt
+│   ├── _get_preprocess_dataset
+│   │   └── preprocess_supervised_dataset / preprocess_packed_supervised_dataset
+│   │       └── _encode_supervised_example
+│   └── split_dataset
+├── trainer=CustomSeq2SeqTrainer()
+└── trainer.train()
+    └── _inner_training_loop
+        ├── get_train_dataloader
+        │   ├── _remove_unused_columns
+        │   │   ├── _set_signature_columns_if_needed
+        │   │   └── remove_columns
+        │   └── DataLoader
+        └── training_step
+            ├── _prepare_inputs
+            │    └── _prepare_input
+            └── compute_loss
+                └── LabelSmoother 
