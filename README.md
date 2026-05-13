@@ -44,7 +44,8 @@ llamafactory-loss-weight/
 ├── LICENSE                                                     
 │
 ├── docs/
-│   └── TECHNICAL_DETAILS.md            # 技术详解文档
+│   ├── TECHNICAL_DETAILS.md            # 技术详解文档
+│	└── 整体数据流架构.txt
 │
 └── examples/
     ├── dataset_info.json               # 数据集配置示例
