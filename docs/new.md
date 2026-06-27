@@ -2,7 +2,7 @@
 
 本文档详细记录了在 LLaMA-Factory 框架中实现**样本级损失加权功能**的完整技术过程，包括代码追踪、修改点说明及实现细节。全文按照 SFT 微调的数据流顺序组织，读者可沿着 `run_sft` 入口逐步追踪 `loss_weight` 从数据集配置到损失计算的完整传递链路。
 
-在阅读本文档之前，建议读者对 HuggingFace Transformers 库的 `Trainer` 训练框架以及 LLaMA-Factory 的基本使用方法有一定了解。本文档涉及的源码版本为 `llamafactory=0.9.1` 与 `transformers=4.46.1`，所有代码引用均附有对应版本的 GitHub 链接，方便读者对照查阅。
+本文档涉及的源码版本为 `llamafactory=0.9.1` 与 `transformers=4.46.1`，所有代码引用均附有对应版本的 GitHub 链接，方便读者对照查阅。
 
 ## 目录
 
