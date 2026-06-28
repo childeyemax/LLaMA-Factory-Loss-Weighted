@@ -191,7 +191,7 @@ def get_dataset(
     training_args: "Seq2SeqTrainingArguments",
     stage: Literal["pt", "sft", "rm", "ppo", "kto"],
     tokenizer: "PreTrainedTokenizer",
-    processor: Optional["ProcessorMix"] = None,
+    processor: Optional["ProcessorMixin"] = None,
 ) -> "DatasetModule":
     r"""
     Gets the train dataset and optionally gets the evaluation dataset.
@@ -284,7 +284,7 @@ def _get_merged_dataset(
 <https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/parser.py#L74>
 
 <details>
-<summary>点击展开完整代码</summary>
+<summary>完整代码</summary>
 
 ```python
 def get_dataset_list(dataset_names: Optional[Sequence[str]], dataset_dir: str) -> List["DatasetAttr"]:
@@ -292,51 +292,51 @@ def get_dataset_list(dataset_names: Optional[Sequence[str]], dataset_dir: str) -
     Gets the attributes of the datasets.
     """
 
-    #……L83
-    else:
-          #……L89
-          try:
-                  with open(config_path) as f:
-          dataset_info = json.load(f)
+	#……L83
+	else:
+		#……L89
+		try:
+			with open(config_path) as f:
+                dataset_info = json.load(f)
 
     #……L98
     dataset_list: List["DatasetAttr"] = []
-        for name in dataset_names:
-            #……L127
-            else:
-                dataset_attr = DatasetAttr("file", dataset_name=dataset_info[name]["file_name"])
-        
-            dataset_attr.set_attr("formatting", dataset_info[name], default="alpaca")
-            dataset_attr.set_attr("ranking", dataset_info[name], default=False)
-            dataset_attr.set_attr("subset", dataset_info[name])
-            dataset_attr.set_attr("split", dataset_info[name], default="train")
-            dataset_attr.set_attr("folder", dataset_info[name])
-            dataset_attr.set_attr("num_samples", dataset_info[name])
-        
-            if "columns" in dataset_info[name]:
-                column_names = ["system", "tools", "images", "videos", "chosen", "rejected", "kto_tag"]
-                if dataset_attr.formatting == "alpaca":
-                    column_names.extend(["prompt", "query", "response", "history"])
-                else:
-                    column_names.extend(["messages"])
-        
-                for column_name in column_names:
-                    dataset_attr.set_attr(column_name, dataset_info[name]["columns"])
-        
-            if dataset_attr.formatting == "sharegpt" and "tags" in dataset_info[name]:
-                tag_names = (
-                    "role_tag",
-                    "content_tag",
-                    "user_tag",
-                    "assistant_tag",
-                    "observation_tag",
-                    "function_tag",
-                    "system_tag",
-                )
-                for tag in tag_names:
-                    dataset_attr.set_attr(tag, dataset_info[name]["tags"])
-        
-            dataset_list.append(dataset_attr)
+	for name in dataset_names:
+	    #……L127
+	    else:
+	        dataset_attr = DatasetAttr("file", dataset_name=dataset_info[name]["file_name"])
+	
+	    dataset_attr.set_attr("formatting", dataset_info[name], default="alpaca")
+	    dataset_attr.set_attr("ranking", dataset_info[name], default=False)
+	    dataset_attr.set_attr("subset", dataset_info[name])
+	    dataset_attr.set_attr("split", dataset_info[name], default="train")
+	    dataset_attr.set_attr("folder", dataset_info[name])
+	    dataset_attr.set_attr("num_samples", dataset_info[name])
+	
+	    if "columns" in dataset_info[name]:
+	        column_names = ["system", "tools", "images", "videos", "chosen", "rejected", "kto_tag"]
+	        if dataset_attr.formatting == "alpaca":
+	            column_names.extend(["prompt", "query", "response", "history"])
+	        else:
+	            column_names.extend(["messages"])
+	
+	        for column_name in column_names:
+	            dataset_attr.set_attr(column_name, dataset_info[name]["columns"])
+	
+	    if dataset_attr.formatting == "sharegpt" and "tags" in dataset_info[name]:
+	        tag_names = (
+	            "role_tag",
+	            "content_tag",
+	            "user_tag",
+	            "assistant_tag",
+	            "observation_tag",
+	            "function_tag",
+	            "system_tag",
+	        )
+	        for tag in tag_names:
+	            dataset_attr.set_attr(tag, dataset_info[name]["tags"])
+	
+	    dataset_list.append(dataset_attr)
 
     return dataset_list
 ```
@@ -557,7 +557,7 @@ def _get_preprocessed_dataset(
     stage: Literal["pt", "sft", "rm", "ppo", "kto"],
     template: "Template",
     tokenizer: "PreTrainedTokenizer",
-    processor: Optional["ProcessorMix"] = None,
+    processor: Optional["ProcessorMixin"] = None,
     is_eval: bool = False,
 ) -> Optional[Union["Dataset", "IterableDataset"]]:
     r"""
@@ -593,7 +593,7 @@ def get_preprocess_and_print_func(
     stage: Literal["pt", "sft", "rm", "ppo", "kto"],
     template: "Template",
     tokenizer: "PreTrainedTokenizer",
-    processor: Optional["ProcessorMix"],
+    processor: Optional["ProcessorMixin"],
     do_generate: bool = False,
 ) -> Tuple[Callable, Callable]:
 
@@ -634,7 +634,7 @@ def preprocess_supervised_dataset(
     examples: Dict[str, List[Any]],
     template: "Template",
     tokenizer: "PreTrainedTokenizer",
-    processor: Optional["ProcessorMix"],
+    processor: Optional["ProcessorMixin"],
     data_args: "DataArguments",
 ) -> Dict[str, List[Any]]:
     # build inputs with format `<bos> X Y <eos>` and labels with format `<ignore> ... <ignore> Y <eos>`
@@ -689,14 +689,14 @@ def preprocess_supervised_dataset(
 当启用 packing 时，多条样本会被打包到同一个序列中以提高训练效率。Packing 通过贪心背包算法（`greedy_knapsack`）将不同长度的样本组合填充至 `cutoff_len` 长度，减少 padding 造成的计算浪费。因此 `loss_weight` 也需要相应地被打包，使每条样本的权重随其 token 一同进入打包序列。
 
 <details>
-<summary>点击展开完整代码</summary>
+<summary>完整代码</summary>
 
 ```python
 def preprocess_packed_supervised_dataset(
     examples: Dict[str, List[Any]],
     template: "Template",
     tokenizer: "PreTrainedTokenizer",
-    processor: Optional["ProcessorMix"],
+    processor: Optional["ProcessorMixin"],
     data_args: "DataArguments",
 ) -> Dict[str, List[Any]]:
     # TODO: use `position_ids` to achieve packing
@@ -840,7 +840,7 @@ trainer = CustomSeq2SeqTrainer(
 **CustomSeq2SeqTrainer**：<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/train/sft/trainer.py#L46>
 
 <details>
-<summary>点击展开 Trainer 初始化代码</summary>
+<summary>Trainer 初始化代码</summary>
 
 ```python
 class Trainer:
@@ -854,7 +854,7 @@ class Trainer:
         train_dataset: Optional[Union[Dataset, IterableDataset, "datasets.Dataset"]] = None,
         eval_dataset: Optional[Union[Dataset, Dict[str, Dataset], "datasets.Dataset"]] = None,
         processing_class: Optional[
-            Union[PreTrainedTokenizerBase, BaseImageProcessor, FeatureExtractionMixin, ProcessorMix"]
+            Union[PreTrainedTokenizerBase, BaseImageProcessor, FeatureExtractionMixin, ProcessorMixin]
         ] = None,
         model_init: Optional[Callable[[], PreTrainedModel]] = None,
         compute_loss_func: Optional[Callable] = None,
@@ -875,7 +875,7 @@ class Trainer:
 </details>
 
 <details>
-<summary>点击展开 Seq2SeqTrainer 初始化代码</summary>
+<summary>Seq2SeqTrainer 初始化代码</summary>
 
 ```python
 class Seq2SeqTrainer(Trainer):
@@ -888,7 +888,7 @@ class Seq2SeqTrainer(Trainer):
         train_dataset: Optional[Union[Dataset, "IterableDataset", "datasets.Dataset"]] = None,
         eval_dataset: Optional[Union[Dataset, Dict[str, Dataset]]] = None,
         processing_class: Optional[
-            Union["PreTrainedTokenizerBase", "BaseImageProcessor", "FeatureExtractionMixin", "ProcessorMix"]
+            Union["PreTrainedTokenizerBase", "BaseImageProcessor", "FeatureExtractionMixin", "ProcessorMixin"]
         ] = None,
         model_init: Optional[Callable[[], "PreTrainedModel"]] = None,
         compute_metrics: Optional[Callable[["EvalPrediction"], Dict]] = None,
@@ -915,7 +915,7 @@ class Seq2SeqTrainer(Trainer):
 </details>
 
 <details>
-<summary>点击展开 CustomSeq2SeqTrainer 初始化代码</summary>
+<summary>CustomSeq2SeqTrainer 初始化代码</summary>
 
 ```python
 class CustomSeq2SeqTrainer(Seq2SeqTrainer):
@@ -923,7 +923,7 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
     Inherits Seq2SeqTrainer to compute generative metrics such as BLEU and ROUGE.
     """
     def __init__(
-        self, finetuning_args: "FinetuningArguments", processor: Optional["ProcessorMix"], **kwargs
+        self, finetuning_args: "FinetuningArguments", processor: Optional["ProcessorMixin"], **kwargs
     ) -> None:
         super().__init__(**kwargs)
         ……
@@ -1097,6 +1097,9 @@ def _inner_training_loop(
 
 `_remove_unused_columns` 的工作机制是：通过 `inspect.signature` 解析模型 `forward` 方法的参数列表，生成 `_signature_columns` 白名单，然后将数据集中不在白名单内的列移除。由于 `loss_weight` 并非模型 `forward` 方法的参数，默认情况下会被当作"unused column"移除，导致后续 `compute_loss` 无法获取该字段。因此需要在 `CustomSeq2SeqTrainer` 中重写 `_set_signature_columns_if_needed` 方法，将 `loss_weight` 追加到白名单中。
 
+<details>
+<summary>get_train_dataloader</summary>
+
 ```python
 def get_train_dataloader(self) -> DataLoader:
     """
@@ -1134,9 +1137,14 @@ def get_train_dataloader(self) -> DataLoader:
     return self.accelerator.prepare(DataLoader(train_dataset, **dataloader_params))
 ```
 
+</details>
+
 其中 `train_dataset = self._remove_unused_columns(train_dataset, description="training")`
 
-**Trainer._remove_unused_columns 方法**（<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L865>）的完整代码如下：
+<details>
+<summary>Trainer._remove_unused_columns</summary>
+
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L865>
 
 ```python
 def _remove_unused_columns(self, dataset: "datasets.Dataset", description: Optional[str] = None):
@@ -1172,6 +1180,8 @@ def _remove_unused_columns(self, dataset: "datasets.Dataset", description: Optio
         return dataset.remove_columns(ignored_columns)
 ```
 
+</details>
+
 其中被保留的是：
 
 ```python
@@ -1179,7 +1189,12 @@ self._set_signature_columns_if_needed()
 signature_columns = self._signature_columns
 ```
 
-**Trainer._set_signature_columns_if_needed 方法**（<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L850>）全部代码如下：
+`Trainer._set_signature_columns_if_needed 方法`:<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L850>
+
+<details>
+<summary>Trainer._set_signature_columns_if_needed</summary>
+
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L850>
 
 ```python
 def _set_signature_columns_if_needed(self):
@@ -1197,6 +1212,8 @@ def _set_signature_columns_if_needed(self):
         # Labels may be named label or label_ids, the default data collator handles that.
         self._signature_columns += list(set(["label", "label_ids"] + self.label_names))
 ```
+
+</details>
 
 ---
 
@@ -1220,7 +1237,7 @@ def _set_signature_columns_if_needed(self):
 `training_step` 是单步训练的核心方法。它接收一个批次的 `inputs`，先通过 `_prepare_inputs` 将数据转移到计算设备，然后调用 `compute_loss` 计算损失，最后执行反向传播。
 
 <details>
-<summary>点击展开完整代码</summary>
+<summary>完整代码</summary>
 
 ```python
 def training_step(
@@ -1302,7 +1319,10 @@ def training_step(
 1. `Trainer._prepare_input` 方法首先将输入的 inputs 中的 torch.tensor 转移到 `self.args.device` 设备中，如果采用 deepspeed 还要把浮点数和复数的数格式转化为 `self.accelerator.state.deepspeed_plugin.hf_ds_config.dtype()`
 2. `Trainer._prepare_inputs` 方法给 inputs 增加新的键值对：`inputs["mems"] = self._past`
 
-**`_prepare_inputs`**：<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3508>
+<details>
+<summary> _prepare_inputs </summary>
+
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3508>
 
 ```python
 def _prepare_input(self, data: Union[torch.Tensor, Any]) -> Union[torch.Tensor, Any]:
@@ -1324,7 +1344,12 @@ def _prepare_input(self, data: Union[torch.Tensor, Any]) -> Union[torch.Tensor, 
     return data
 ```
 
-**`_prepare_input`**：<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3490>
+</details>
+
+<details>
+<summary>_prepare_input</summary>
+
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3490>
 
 ```python
 def _prepare_inputs(self, inputs: Dict[str, Union[torch.Tensor, Any]]) -> Dict[str, Union[torch.Tensor, Any]]:
@@ -1344,6 +1369,8 @@ def _prepare_inputs(self, inputs: Dict[str, Union[torch.Tensor, Any]]) -> Dict[s
     return inputs
 ```
 
+</details>
+
 ---
 
 ##### compute_loss —— 计算损失
@@ -1357,7 +1384,7 @@ def _prepare_inputs(self, inputs: Dict[str, Union[torch.Tensor, Any]]) -> Dict[s
 <https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3610>
 
 <details>
-<summary>点击展开完整代码</summary>
+<summary>完整代码</summary>
 
 ```python
 def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
@@ -1418,6 +1445,9 @@ def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=N
 
 该类的核心计算逻辑为：首先对 logits 取 log-softmax 得到 `log_probs`，然后通过 `gather` 操作提取目标 token 位置的 NLL 损失，同时对所有位置求和得到 smoothed 损失（均匀分布下的损失）。两个损失分量均通过 `padding_mask` 将 `ignore_index`（默认 -100）位置的损失置零，最后按 `(1 - ε) * nll_loss + ε * smoothed_loss` 进行组合，其中 `ε` 为 label smoothing 因子。
 
+<details>
+<summary>LabelSmoother源码 <summary>
+
 ```python
 @dataclass
 class LabelSmoother:
@@ -1462,6 +1492,8 @@ class LabelSmoother:
         return (1 - self.epsilon) * nll_loss + self.epsilon * smoothed_loss
 ```
 
+</details>
+
 ---
 
 ###### CustomSeq2SeqTrainer.compute_loss 方法（原始实现）
@@ -1473,19 +1505,19 @@ class LabelSmoother:
 ```python
 @override
 def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
-        r"""
-        Fixes the loss value for transformers 4.46.0.
-        https://github.com/huggingface/transformers/blob/v4.46.0/src/transformers/trainer.py#L3605
-        """
-        loss = super().compute_loss(model, inputs, return_outputs, **kwargs)
-        if is_transformers_version_equal_to_4_46() and not getattr(self, "model_accepts_loss_kwargs", False):
-                # other model should not scale the loss
-                if return_outputs:
-                        return (loss[0] / self.args.gradient_accumulation_steps, *loss[1:])
-                else:
-                        return loss / self.args.gradient_accumulation_steps
+	r"""
+	Fixes the loss value for transformers 4.46.0.
+	https://github.com/huggingface/transformers/blob/v4.46.0/src/transformers/trainer.py#L3605
+	"""
+	loss = super().compute_loss(model, inputs, return_outputs, **kwargs)
+	if is_transformers_version_equal_to_4_46() and not getattr(self, "model_accepts_loss_kwargs", False):
+		# other model should not scale the loss
+		if return_outputs:
+			return (loss[0] / self.args.gradient_accumulation_steps, *loss[1:])
+		else:
+			return loss / self.args.gradient_accumulation_steps
 
-        return loss
+	return loss
 ```
 
 ---
@@ -1511,60 +1543,60 @@ from torch import nn
 2. 由于版本问题，MODEL_FOR_CAUSAL_LM_MAPPING_NAMES（<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/models/auto/modeling_auto.py#L462>）收录的模型可能不全，根据需要可以将 `elif model_name in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES.values():` 替换为 `elif (model_name == "模型名") or (model_name in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES.values()):`。
 
 <details>
-<summary>点击展开重写后的 compute_loss 完整代码</summary>
+<summary>重写后的 compute_loss 完整代码</summary>
 
 ```python
 @override
 def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
-    """
-    How the loss is computed by Trainer. By default, all models return the loss in the first element.
+	"""
+	How the loss is computed by Trainer. By default, all models return the loss in the first element.
 
-    Subclass and override for custom behavior.
-    """
+	Subclass and override for custom behavior.
+	"""
 
 	if (self.label_smoother_weighted is not None or self.compute_loss_func is not None) and "labels" in inputs:
-			# 将self.label_smoother改为self.label_smoother_weighted
-			labels = inputs.pop("labels")
+		# 将self.label_smoother改为self.label_smoother_weighted
+		labels = inputs.pop("labels")
 	else:
-			labels = None
+		labels = None
 
 	if "loss_weight" in inputs:
-			loss_weight = inputs.pop("loss_weight") # 按照预期，loss_weight是形状为(batchsize,)的torch.tensor
+		loss_weight = inputs.pop("loss_weight") # 按照预期，loss_weight是形状为(batchsize,)的torch.tensor
 	else:
-			loss_weight = None
+		loss_weight = None
 
 	if self.model_accepts_loss_kwargs:
-			loss_kwargs = {}
-			if num_items_in_batch is not None:
-					loss_kwargs["num_items_in_batch"] = num_items_in_batch
-			inputs = {**inputs, **loss_kwargs}
+		loss_kwargs = {}
+		if num_items_in_batch is not None:
+			loss_kwargs["num_items_in_batch"] = num_items_in_batch
+		inputs = {**inputs, **loss_kwargs}
 	outputs = model(**inputs) # 或者为 outputs = model(**inputs, labels=labels)
 	# Save past state if it exists
 	# TODO: this needs to be fixed and made cleaner later.
 	if self.args.past_index >= 0:
-			self._past = outputs[self.args.past_index]
+		self._past = outputs[self.args.past_index]
 	
 	if labels is not None:
-			unwrapped_model = self.accelerator.unwrap_model(model)
-			if _is_peft_model(unwrapped_model):
-					model_name = unwrapped_model.base_model.model._get_name()
-			else:
-					model_name = unwrapped_model._get_name()
-			# User-defined compute_loss function
-			if self.compute_loss_func is not None:
-					loss = self.compute_loss_func(outputs, labels, num_items_in_batch=num_items_in_batch)
-			elif model_name in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES.values():
-					loss = self.label_smoother_weighted(outputs, labels, loss_weight, shift_labels=True)
-			else:
-					loss = self.label_smoother_weighted(outputs, labels, loss_weight)
+		unwrapped_model = self.accelerator.unwrap_model(model)
+		if _is_peft_model(unwrapped_model):
+			model_name = unwrapped_model.base_model.model._get_name()
+		else:
+			model_name = unwrapped_model._get_name()
+		# User-defined compute_loss function
+		if self.compute_loss_func is not None:
+			loss = self.compute_loss_func(outputs, labels, num_items_in_batch=num_items_in_batch)
+		elif model_name in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES.values():
+			loss = self.label_smoother_weighted(outputs, labels, loss_weight, shift_labels=True)
+		else:
+			loss = self.label_smoother_weighted(outputs, labels, loss_weight)
 	else:
-			if isinstance(outputs, dict) and "loss" not in outputs:
-					raise ValueError(
-							"The model did not return a loss from the inputs, only the following keys: "
-							f"{','.join(outputs.keys())}. For reference, the inputs it received are {','.join(inputs.keys())}."
-					)
-			# We don't use .loss here since the model may return tuples instead of ModelOutput.
-			loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
+		if isinstance(outputs, dict) and "loss" not in outputs:
+			raise ValueError(
+				"The model did not return a loss from the inputs, only the following keys: "
+				f"{','.join(outputs.keys())}. For reference, the inputs it received are {','.join(inputs.keys())}."
+			)
+		# We don't use .loss here since the model may return tuples instead of ModelOutput.
+		loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
 	
 	r"""
 	Fixes the loss value for transformers 4.46.0.
@@ -1572,8 +1604,8 @@ def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=N
 	"""
 
 	if is_transformers_version_equal_to_4_46() and not getattr(self, "model_accepts_loss_kwargs", False):
-			loss = loss / self.args.gradient_accumulation_steps
-			
+		loss = loss / self.args.gradient_accumulation_steps
+		
 	return (loss, outputs) if return_outputs else loss
 ```
 
@@ -1586,7 +1618,7 @@ def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=N
 该方法的核心修改在于：在 `masked_fill_` 操作之前，将 `nll_loss` 和 `smoothed_loss` 分别乘以 `loss_weight` 扩展后的权重张量（形状为 `(batch_size, 1, 1)`），从而实现样本级加权。权重乘法在 padding mask 应用之前进行，确保 padding 位置的损失仍会被正确置零。
 
 <details>
-<summary>点击展开 label_smoother_weighted 完整代码</summary>
+<summary>label_smoother_weighted 完整代码</summary>
 
 ```python
 def label_smoother_weighted(self, model_output, labels, loss_weight, shift_labels=False):
@@ -1597,30 +1629,30 @@ def label_smoother_weighted(self, model_output, labels, loss_weight, shift_label
 	
 	logits = model_output["logits"] if isinstance(model_output, dict) else model_output[0]
 	if shift_labels:
-			logits = logits[..., :-1, :].contiguous()
-			labels = labels[..., 1:].contiguous()
+		logits = logits[..., :-1, :].contiguous()
+		labels = labels[..., 1:].contiguous()
 
 	log_probs = -nn.functional.log_softmax(logits, dim=-1)
 	if labels.dim() == log_probs.dim() - 1:
-			labels = labels.unsqueeze(-1)
+		labels = labels.unsqueeze(-1)
 
 	padding_mask = labels.eq(ignore_index)
 	# In case the ignore_index is -100, the gather will fail, so we replace labels by 0. The padding_mask
 	# will ignore them in any case.
 	labels = torch.clamp(labels, min=0)
-																										   
+														
 	nll_loss = log_probs.gather(dim=-1, index=labels)
 	
 	# works for fp16 input tensor too, by internally upcasting it to fp32
 	smoothed_loss = log_probs.sum(dim=-1, keepdim=True, dtype=torch.float32)
 
 	if loss_weight is not None:
-			weights = loss_weight.unsqueeze(-1).unsqueeze(-1) # 将weights的形状变为(batchsize,1,1)
-			nll_loss = nll_loss * weights # 损失函数乘权重
-			smoothed_loss = smoothed_loss * weights
+		weights = loss_weight.unsqueeze(-1).unsqueeze(-1) # 将weights的形状变为(batchsize,1,1)
+		nll_loss = nll_loss * weights # 损失函数乘权重
+		smoothed_loss = smoothed_loss * weights
 
 	else:
-			raise ValueError("错误：loss_weight is None!")
+		raise ValueError("错误：loss_weight is None!")
 
 	nll_loss.masked_fill_(padding_mask, 0.0)
 	smoothed_loss.masked_fill_(padding_mask, 0.0)
