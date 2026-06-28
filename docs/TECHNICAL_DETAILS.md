@@ -53,7 +53,8 @@ LLaMA-Factory 的 SFT 微调流程从 `run_sft` 入口函数出发，沿数据�
 
 3. **训练执行**（`trainer.train()`）：通过训练循环迭代读取数据批次，执行前向传播与损失计算。`loss_weight` 在此阶段被注入损失函数，实现样本级加权。
 
-整体数据流架构如下（亦可见 [整体数据流架构.txt](./整体数据流架构.txt)）：
+
+整体数据流架构如下（亦可见 [整体数据流架构.txt](./整体数据流架构.txt)）
 
 ```
 run_sft
@@ -118,7 +119,10 @@ Label Smoothing（标签平滑）是一种正则化技术，用于防止模型�
 
 ## 一、run_sft —— SFT 微调入口
 
-`run_sft` 是整个 SFT 微调流程的入口函数，负责协调数据加载、模型初始化与训练执行三大步骤。其定义位于：
+`run_sft` 是整个 SFT 微调流程的入口函数，负责协调数据加载、模型初始化与训练执行三大步骤。
+
+<details>
+<summary>run_sft 源码</summary>
 
 <https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/train/sft/workflow.py#L36>
 
@@ -158,6 +162,8 @@ def run_sft(
         ……
 ```
 
+</details>
+
 从代码中可以看出，`run_sft` 依次完成三件事：首先通过 `get_dataset` 加载并预处理数据集，然后通过 `load_model` 加载模型，最后初始化 `CustomSeq2SeqTrainer` 并调用 `trainer.train()` 启动训练。后续章节将沿着这条数据流，逐一深入每个环节。
 
 **补充说明**：
@@ -180,6 +186,9 @@ def run_sft(
 在这三个步骤中，`loss_weight` 字段需要被正确地提取、传递和保留。其中第一步和第二步涉及对原始数据结构的修改，是本项目代码修改的重点区域。
 
 ### 2.1 get_dataset 函数
+
+<details>
+<summary>源码</summary>
 
 <https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/loader.py#L225>
 
@@ -227,6 +236,8 @@ def get_dataset(
         return dataset_module
 ```
 
+</details>
+
 `get_dataset` 函数对训练集和验证集分别执行加载融合与预处理操作，最终将结果封装为字典返回。其中训练集与验证集的分割由 `split_dataset` 完成（详见 [2.4 split_dataset](#24-split_dataset--分割数据集)）。下面依次展开 `_get_merged_dataset` 和 `_get_preprocessed_dataset` 两个核心子流程。
 
 ---
@@ -242,6 +253,9 @@ def get_dataset(
 3. 融合数据集：`merge_dataset(datasets, data_args, seed=training_args.seed)`
 
 #### _get_merged_dataset 函数
+
+<details>
+<summary>源码</summary>
 
 <https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/loader.py#L153>
 
@@ -269,6 +283,8 @@ def _get_merged_dataset(
     return merge_dataset(datasets, data_args, seed=training_args.seed)
 ```
 
+</details>
+
 ---
 
 #### 2.2.1 get_dataset_list —— 建立 DatasetAttr 实例列表
@@ -281,10 +297,10 @@ def _get_merged_dataset(
 
 ##### get_dataset_list 函数
 
-<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/parser.py#L74>
-
 <details>
-<summary>完整代码</summary>
+<summary>源码</summary>
+
+<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/parser.py#L74>
 
 ```python
 def get_dataset_list(dataset_names: Optional[Sequence[str]], dataset_dir: str) -> List["DatasetAttr"]:
@@ -345,6 +361,9 @@ def get_dataset_list(dataset_names: Optional[Sequence[str]], dataset_dir: str) -
 
 ##### DatasetAttr 的定义
 
+<details>
+<summary>源码</summary>
+
 <https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/parser.py#L26>
 
 ```python
@@ -371,6 +390,8 @@ class DatasetAttr:
     def set_attr(self, key: str, obj: Dict[str, Any], default: Optional[Any] = None) -> None:
         setattr(self, key, obj.get(key, default))
 ```
+
+</details>
 
 ---
 
@@ -409,6 +430,9 @@ class DatasetAttr:
 
 ##### _load_single_dataset 函数
 
+<details>
+<summary>源码</summary>
+
 <https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/loader.py#L45>
 
 ```python
@@ -440,6 +464,8 @@ def _load_single_dataset(
     return align_dataset(dataset, dataset_attr, data_args, training_args)
 ```
 
+<details>
+
 ##### 对齐数据集
 
 `align_dataset(dataset, dataset_attr, data_args, training_args)`
@@ -448,7 +474,10 @@ def _load_single_dataset(
 
 对齐是数据格式标准化的关键环节：原始数据集中的字段名因数据集而异（如 ShareGPT 中的 `conversations`、Alpaca 中的 `instruction` 等），而经过对齐后，所有样本统一使用 `_prompt`、`_response` 等带下划线前缀的标准字段名，供后续预处理阶段使用。`loss_weight` 字段也需要在此阶段从原始字段名映射为标准字段名 `_loss_weight`。
 
-**align_dataset 函数**：<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/aligner.py#L230>
+<details>
+<summary>align_dataset 源码</summary>
+
+<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/aligner.py#L230>
 
 ```python
 def align_dataset(
@@ -488,7 +517,12 @@ def align_dataset(
     )
 ```
 
-**convert_sharegpt 函数**：<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/aligner.py#L137>
+</details>
+
+<details>
+<summary>convert_sharegpt 源码</summary>
+
+<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/aligner.py#L137>
 
 ```python
 def convert_sharegpt(
@@ -511,6 +545,8 @@ def convert_sharegpt(
     }
     return output
 ```
+
+</details>
 
 ---
 
@@ -546,6 +582,9 @@ def convert_sharegpt(
 2. 在 sft 阶段，`preprocess_func` 函数是 `preprocess_supervised_dataset` 或者 `preprocess_packed_supervised_dataset` 函数的偏函数
 
 #### _get_preprocessed_dataset 函数
+
+<details>
+<summary>源码</summary>
 
 <https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/loader.py#L176>
 
@@ -583,7 +622,12 @@ def _get_preprocessed_dataset(
     return dataset
 ```
 
+</details>
+
 #### get_preprocess_and_print_func 函数
+
+<details>
+<summary>源码</summary>
 
 <https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/preprocess.py#L36>
 
@@ -621,11 +665,16 @@ def get_preprocess_and_print_func(
     return preprocess_func, print_function
 ```
 
+</details>
+
 `get_preprocess_and_print_func` 根据 `stage` 和 `data_args.packing` 选择具体的预处理函数。在 SFT 阶段，若启用 packing 则使用 `preprocess_packed_supervised_dataset`，否则使用 `preprocess_supervised_dataset`。两者内部均调用 `_encode_supervised_example` 完成单条样本的编码。
 
 ---
 
 #### 2.3.1 preprocess_supervised_dataset 函数
+
+<details>
+<summary>源码</summary>
 
 <https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/data/processors/supervised.py#L90>
 
@@ -670,6 +719,8 @@ def preprocess_supervised_dataset(
     return model_inputs
 ```
 
+<details>
+
 ---
 
 > **【代码修改 3】** · `src/llamafactory/data/processors/supervised.py`
@@ -689,7 +740,7 @@ def preprocess_supervised_dataset(
 当启用 packing 时，多条样本会被打包到同一个序列中以提高训练效率。Packing 通过贪心背包算法（`greedy_knapsack`）将不同长度的样本组合填充至 `cutoff_len` 长度，减少 padding 造成的计算浪费。因此 `loss_weight` 也需要相应地被打包，使每条样本的权重随其 token 一同进入打包序列。
 
 <details>
-<summary>完整代码</summary>
+<summary>源码</summary>
 
 ```python
 def preprocess_packed_supervised_dataset(
@@ -972,7 +1023,12 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
 
 ### 4.1 Trainer.train 方法
 
-训练过程由 `trainer.train` 方法启动，其定义来自于 `Trainer` 类：<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L2021>
+训练过程由 `trainer.train` 方法启动，其定义来自于 `Trainer`。
+
+<details>
+<summary>源码</summary>
+
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L2021>
 
 ```python
 def train(
@@ -1009,6 +1065,8 @@ def train(
         )
 ```
 
+</details>
+
 `Trainer.train` 方法的返回值是：
 
 ```python
@@ -1044,6 +1102,9 @@ tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
 
 `_inner_training_loop` 是训练的核心循环，负责构建数据加载器、迭代训练批次并执行每一步训练。其内部包含两个关键分支：`get_train_dataloader` 负责将 Dataset 转化为可迭代的 DataLoader，`training_step` 负责对每个批次执行前向传播与损失计算。
 
+<details>
+<summary>源码</summary>
+
 ```python
 def _inner_training_loop(
     self, batch_size=None, args=None, resume_from_checkpoint=None, trial=None, ignore_keys_for_eval=None
@@ -1073,6 +1134,8 @@ def _inner_training_loop(
     return TrainOutput(self.state.global_step, train_loss, metrics)
 ```
 
+</details>
+
 #### inputs 溯源
 
 在训练循环中，`inputs` 的来源可追溯如下：
@@ -1098,7 +1161,7 @@ def _inner_training_loop(
 `_remove_unused_columns` 的工作机制是：通过 `inspect.signature` 解析模型 `forward` 方法的参数列表，生成 `_signature_columns` 白名单，然后将数据集中不在白名单内的列移除。由于 `loss_weight` 并非模型 `forward` 方法的参数，默认情况下会被当作"unused column"移除，导致后续 `compute_loss` 无法获取该字段。因此需要在 `CustomSeq2SeqTrainer` 中重写 `_set_signature_columns_if_needed` 方法，将 `loss_weight` 追加到白名单中。
 
 <details>
-<summary>get_train_dataloader</summary>
+<summary>get_train_dataloader 源码</summary>
 
 ```python
 def get_train_dataloader(self) -> DataLoader:
@@ -1142,7 +1205,7 @@ def get_train_dataloader(self) -> DataLoader:
 其中 `train_dataset = self._remove_unused_columns(train_dataset, description="training")`
 
 <details>
-<summary>Trainer._remove_unused_columns</summary>
+<summary>Trainer._remove_unused_columns 源码</summary>
 
 <https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L865>
 
@@ -1192,7 +1255,7 @@ signature_columns = self._signature_columns
 `Trainer._set_signature_columns_if_needed 方法`:<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L850>
 
 <details>
-<summary>Trainer._set_signature_columns_if_needed</summary>
+<summary>Trainer._set_signature_columns_if_needed 源码</summary>
 
 <https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L850>
 
@@ -1232,12 +1295,12 @@ def _set_signature_columns_if_needed(self):
 
 #### 4.2.2 training_step —— 执行单步训练
 
-<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3542>
-
 `training_step` 是单步训练的核心方法。它接收一个批次的 `inputs`，先通过 `_prepare_inputs` 将数据转移到计算设备，然后调用 `compute_loss` 计算损失，最后执行反向传播。
 
 <details>
-<summary>完整代码</summary>
+<summary>源码</summary>
+
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3542>
 
 ```python
 def training_step(
@@ -1320,7 +1383,7 @@ def training_step(
 2. `Trainer._prepare_inputs` 方法给 inputs 增加新的键值对：`inputs["mems"] = self._past`
 
 <details>
-<summary> _prepare_inputs </summary>
+<summary>_prepare_inputs 源码</summary>
 
 <https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3508>
 
@@ -1347,7 +1410,7 @@ def _prepare_input(self, data: Union[torch.Tensor, Any]) -> Union[torch.Tensor, 
 </details>
 
 <details>
-<summary>_prepare_input</summary>
+<summary>_prepare_input 源码</summary>
 
 <https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3490>
 
@@ -1381,10 +1444,10 @@ def _prepare_inputs(self, inputs: Dict[str, Union[torch.Tensor, Any]]) -> Dict[s
 
 ###### Trainer.compute_loss 方法（原始实现）
 
-<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3610>
-
 <details>
-<summary>完整代码</summary>
+<summary>源码</summary>
+
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L3610>
 
 ```python
 def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
@@ -1439,15 +1502,15 @@ def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=N
 
 ###### LabelSmoother 类
 
-<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer_pt_utils.py#L544>
-
 `LabelSmoother` 是 transformers 库中内置的损失计算类，支持 label smoothing。其 `__call__` 方法接收模型输出和标签，计算带平滑的交叉熵损失。后续的 `label_smoother_weighted` 方法即在此基础上扩展了样本级加权能力。
 
 该类的核心计算逻辑为：首先对 logits 取 log-softmax 得到 `log_probs`，然后通过 `gather` 操作提取目标 token 位置的 NLL 损失，同时对所有位置求和得到 smoothed 损失（均匀分布下的损失）。两个损失分量均通过 `padding_mask` 将 `ignore_index`（默认 -100）位置的损失置零，最后按 `(1 - ε) * nll_loss + ε * smoothed_loss` 进行组合，其中 `ε` 为 label smoothing 因子。
 
 
 <details>
-<summary>LabelSmoother 源码</summary>
+<summary>源码</summary>
+
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer_pt_utils.py#L544>
 
 ```python
 @dataclass
