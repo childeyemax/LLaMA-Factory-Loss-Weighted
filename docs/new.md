@@ -292,12 +292,12 @@ def get_dataset_list(dataset_names: Optional[Sequence[str]], dataset_dir: str) -
     Gets the attributes of the datasets.
     """
 
-        #……L83
-        else:
-                #……L89
-                try:
-                        with open(config_path) as f:
-                dataset_info = json.load(f)
+    #……L83
+    else:
+          #……L89
+          try:
+                  with open(config_path) as f:
+          dataset_info = json.load(f)
 
     #……L98
     dataset_list: List["DatasetAttr"] = []
