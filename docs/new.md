@@ -96,7 +96,7 @@ run_sft
 
 在标准的监督微调中，每个训练样本对损失函数的贡献是均等的。然而在实际应用中，不同样本往往具有不同的重要性：某些样本可能来自关键业务领域、某些样本质量更高、某些样本代表稀有但重要的场景。样本级损失加权（Sample-level Loss Weighting）通过为每个样本赋予一个权重系数，缩放其对总损失的贡献，从而使模型在训练过程中更加关注高权重样本。
 
-这一技术与重要性采样（Importance Sampling）、课程学习（Curriculum Learning）和代价敏感学习（Cost-sensitive Learning）等方法密切相关。在本项目中，权重通过数据集中的 `loss_weight` 字段指定，沿数据流传递至损失计算环节，最终在 `label_smoother_weighted` 方法中与 NLL 损失和 smoothed 损失相乘后聚合。
+在本项目中，权重通过数据集中的 `loss_weight` 字段指定，沿数据流传递至损失计算环节，最终在 `label_smoother_weighted` 方法中与 NLL 损失和 smoothed 损失相乘后聚合。
 
 ### HuggingFace Trainer 架构概览
 
