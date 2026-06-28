@@ -464,7 +464,7 @@ def _load_single_dataset(
     return align_dataset(dataset, dataset_attr, data_args, training_args)
 ```
 
-<details>
+</details>
 
 ##### 对齐数据集
 
@@ -719,7 +719,7 @@ def preprocess_supervised_dataset(
     return model_inputs
 ```
 
-<details>
+</details>
 
 ---
 
