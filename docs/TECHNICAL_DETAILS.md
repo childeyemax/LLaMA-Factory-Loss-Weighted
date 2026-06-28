@@ -1445,8 +1445,9 @@ def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=N
 
 该类的核心计算逻辑为：首先对 logits 取 log-softmax 得到 `log_probs`，然后通过 `gather` 操作提取目标 token 位置的 NLL 损失，同时对所有位置求和得到 smoothed 损失（均匀分布下的损失）。两个损失分量均通过 `padding_mask` 将 `ignore_index`（默认 -100）位置的损失置零，最后按 `(1 - ε) * nll_loss + ε * smoothed_loss` 进行组合，其中 `ε` 为 label smoothing 因子。
 
+
 <details>
-<summary>LabelSmoother源码 <summary>
+<summary>LabelSmoother 源码</summary>
 
 ```python
 @dataclass
