@@ -839,6 +839,9 @@ trainer = CustomSeq2SeqTrainer(
 
 **CustomSeq2SeqTrainer**：<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/train/sft/trainer.py#L46>
 
+<details>
+<summary>点击展开 Trainer 初始化代码</summary>
+
 ```python
 class Trainer:
     #……L389
@@ -868,6 +871,8 @@ class Trainer:
             self.label_smoother = None
         ……
 ```
+
+</details>
 
 <details>
 <summary>点击展开 Seq2SeqTrainer 初始化代码</summary>
@@ -909,6 +914,9 @@ class Seq2SeqTrainer(Trainer):
 
 </details>
 
+<details>
+<summary>点击展开 CustomSeq2SeqTrainer 初始化代码</summary>
+
 ```python
 class CustomSeq2SeqTrainer(Seq2SeqTrainer):
     r"""
@@ -935,6 +943,8 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
                 return loss / self.args.gradient_accumulation_steps
         return loss
 ```
+
+</details>
 
 ### 3.2 注意事项
 
