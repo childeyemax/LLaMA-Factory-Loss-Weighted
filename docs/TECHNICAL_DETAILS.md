@@ -884,14 +884,10 @@ trainer = CustomSeq2SeqTrainer(
 
 ### 3.1 Trainer、Seq2SeqTrainer、CustomSeq2SeqTrainer 的初始化
 
-**Trainer**：<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L295>
-
-**Seq2SeqTrainer**：<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer_seq2seq.py#L54>
-
-**CustomSeq2SeqTrainer**：<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/train/sft/trainer.py#L46>
-
 <details>
-<summary>Trainer 初始化代码</summary>
+<summary>Trainer</summary>
+
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer.py#L295>
 
 ```python
 class Trainer:
@@ -926,7 +922,9 @@ class Trainer:
 </details>
 
 <details>
-<summary>Seq2SeqTrainer 初始化代码</summary>
+<summary>Seq2SeqTrainer</summary>
+
+<https://github.com/huggingface/transformers/blob/v4.46.1/src/transformers/trainer_seq2seq.py#L54>
 
 ```python
 class Seq2SeqTrainer(Trainer):
@@ -966,7 +964,9 @@ class Seq2SeqTrainer(Trainer):
 </details>
 
 <details>
-<summary>CustomSeq2SeqTrainer 初始化代码</summary>
+<summary>CustomSeq2SeqTrainer</summary>
+
+<https://github.com/hiyouga/LLaMA-Factory/blob/v0.9.1/src/llamafactory/train/sft/trainer.py#L46>
 
 ```python
 class CustomSeq2SeqTrainer(Seq2SeqTrainer):
